@@ -1,6 +1,6 @@
 # ml4rt
 
-## Machine Learning for Radio Relemtry
+## Machine Learning for Radio Telemetry
 
 Tools to estimate wildlife locations from automated radio telemetry tower data
 
