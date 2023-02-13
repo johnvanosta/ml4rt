@@ -24,4 +24,4 @@ To do:
 Break up optimisation into:
 - pre-processing (frequency, average signal strength, max signal strength, or include detection/time)
 - model selection and parameter tuning
-- Location averaging and smoothing functions (mean, lowess?)
+- Location averaging and smoothing functions (mean, lowess?, other?)
