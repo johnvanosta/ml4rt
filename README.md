@@ -5,6 +5,7 @@
 Tools to estimate wildlife locations from automated radio telemetry tower data
 
 Includes:
+- Text to csv converter for Lotek legacy format text files
 - preprocessing data
 - training ML models
 - running models over raw data
@@ -25,3 +26,6 @@ Break up optimisation into:
 - pre-processing (frequency, average signal strength, max signal strength, or include detection/time)
 - model selection and parameter tuning
 - Location averaging and smoothing functions (mean, lowess?, other?)
+
+Data input requirements:
+- GPS coordinates in WG84 datum
