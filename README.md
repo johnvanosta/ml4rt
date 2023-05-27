@@ -29,3 +29,10 @@ Break up optimisation into:
 
 Data input requirements:
 - GPS coordinates in WG84 datum
+- Raw tower data, eventually in a csv format (some pre-processing scripts to support Lotek provided)
+- Labelled data in the form of GPS locations of tags with start and end times
+
+Process:
+1. Pre-process data to required formats. Some assistance is provided by lotek_txt2csv.ipynb, then manual QA, if needed
+2. simul_data_query.ipynb extracts the radio tower data that match the tag ID and time periods of the labelled GPS data. This script also splits the labelled data into training and testing sets (using a 80:20 split).
+3. Train the model.
