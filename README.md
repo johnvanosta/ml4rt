@@ -35,4 +35,5 @@ Data input requirements:
 Process:
 1. Pre-process data to required formats. Some assistance is provided by lotek_txt2csv.ipynb, then manual QA, if needed
 2. simul_data_query.ipynb extracts the radio tower data that match the tag ID and time periods of the labelled GPS data. This script also splits the labelled data into training and testing sets (using a 80:20 split).
-3. Train the model.
+3. train_model_h2o.ipynb uses the H2O AutoML pipeline (https://docs.h2o.ai/h2o/latest-stable/h2o-docs/automl.html) to optimise model selection and hyperparameter optimisation. The script then makes predictions on the test data to evaluate the final model's performance.
+4. 
