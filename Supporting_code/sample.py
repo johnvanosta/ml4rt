@@ -1,7 +1,7 @@
 import pandas as pd
 
 # Set the input and output file paths
-input_file = 'Example_data/Input/Lotek_combined_csv/RTdatMaster20230317.csv'
+input_file = 'C:/Users/John/Google Drive/E2M/BTFRP/Data/Radio Telemetry/MATLAB/RT_MASTER_DATA/RTdatMaster20230317.csv'
 output_file = 'Example_data/Input/Lotek_combined_csv/sampled_data.csv'
 
 # Set the number of lines to sample
