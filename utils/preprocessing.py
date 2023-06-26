@@ -57,11 +57,15 @@ def preprocess(input_data, freq, routine):
     data_preprocessed.columns = [f"{col[0]}{col[1]}" if col[1] != "" else col[0] for col in data_preprocessed.columns.values]
 
     # Adjust column names for antennas
+    predictors = []
     col_mapping = {}
     for antenna in antennas:
         col_mapping[f'mean{antenna}'] = f'ant{antenna}_mean'
         col_mapping[f'count{antenna}'] = f'ant{antenna}_count'
         col_mapping[f'std{antenna}'] = f'ant{antenna}_std'
+
+        # Add the created columns to the predictors list
+        predictors.extend([f'ant{antenna}_mean', f'ant{antenna}_count', f'ant{antenna}_std'])
 
     data_preprocessed = data_preprocessed.rename(columns=col_mapping)
     
@@ -74,4 +78,4 @@ def preprocess(input_data, freq, routine):
     # Fill missing values with 0
     data_preprocessed = data_preprocessed.fillna(value=0)
 
-    return data_preprocessed
+    return data_preprocessed, predictors
