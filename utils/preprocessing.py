@@ -1,10 +1,12 @@
 import numpy as np
 import pandas as pd
 
+#### Note to self: Remove 'Point_ID', 'Tag_type', 'Interval_seconds' prior to publishing
+
 def training_preprocess_sub(data_preprocessed):
     # group by datetime, tag, tower and antenna, compute mean power and std power, pivot to antennas
     data_preprocessed = (
-        data_preprocessed.groupby(['DateTime', 'TowerID', 'TagID', 'Antenna', 'Data_type', 'POINT_X', 'POINT_Y'])['Power']
+        data_preprocessed.groupby(['DateTime', 'TowerID', 'TagID', 'Antenna', 'Data_type', 'POINT_X', 'POINT_Y', 'Point_ID', 'Tag_type', 'Interval_seconds'])['Power']
         .agg(['mean', 'count', np.std])
         .reset_index()
     )
@@ -12,7 +14,7 @@ def training_preprocess_sub(data_preprocessed):
     # Pivot table with antennas as columns
     data_preprocessed = (
         data_preprocessed.pivot_table(
-            index=['DateTime', 'TowerID', 'TagID', 'Data_type', 'POINT_X', 'POINT_Y'],
+            index=['DateTime', 'TowerID', 'TagID', 'Data_type', 'POINT_X', 'POINT_Y', 'Point_ID', 'Tag_type', 'Interval_seconds'],
             columns='Antenna',
             values=['mean', 'count', 'std']
         )
@@ -23,7 +25,7 @@ def training_preprocess_sub(data_preprocessed):
 def prediction_preprocess_sub(data_preprocessed):
     # group by datetime, tag, tower and antenna, compute mean power and std power, pivot to antennas
     data_preprocessed = (
-        data_preprocessed.groupby(['DateTime', 'TowerID', 'TagID', 'Antenna'])['Power']
+        data_preprocessed.groupby(['DateTime', 'TowerID', 'TagID', 'Antenna', 'Point_ID', 'Tag_type', 'Interval_seconds'])['Power']
         .agg(['mean', 'count', np.std])
         .reset_index()
     )
@@ -31,7 +33,7 @@ def prediction_preprocess_sub(data_preprocessed):
     # Pivot table with antennas as columns
     data_preprocessed = (
         data_preprocessed.pivot_table(
-            index=['DateTime', 'TowerID', 'TagID'],
+            index=['DateTime', 'TowerID', 'TagID', 'Point_ID', 'Tag_type', 'Interval_seconds'],
             columns='Antenna',
             values=['mean', 'count', 'std']
         )
