@@ -9,18 +9,30 @@ Residuals:
 -1.0535 -0.1518  0.0335  0.1765  0.7481 
 
 Coefficients:
-                                                            Estimate Std. Error t value Pr(>|t|)    
-(Intercept)                                                2.026e+00  6.055e-02  33.462  < 2e-16 ***
-Data_typeTracked bird                                      5.417e-02  5.001e-02   1.083  0.27910    
-training_data_typeSimulated bird                          -9.963e-02  4.255e-02  -2.342  0.01946 *  
-training_data_typeTracked bird                             1.389e-01  4.255e-02   3.265  0.00114 ** 
-Tower_count                                               -2.239e-02  7.056e-03  -3.174  0.00157 ** 
-inteval_seconds                                            1.190e-02  4.004e-03   2.971  0.00306 ** 
-mean_distance_from_tower                                   5.805e-04  5.607e-05  10.352  < 2e-16 ***
-Data_typeTracked bird:training_data_typeSimulated bird    -1.503e-02  5.348e-02  -0.281  0.77884    
-Data_typeTracked bird:training_data_typeTracked bird      -1.425e-01  5.348e-02  -2.664  0.00789 ** 
-training_data_typeSimulated bird:mean_distance_from_tower  3.557e-04  7.759e-05   4.584 5.36e-06 ***
-training_data_typeTracked bird:mean_distance_from_tower   -3.180e-05  7.759e-05  -0.410  0.68205    
+                                                            Estimate Std. Error t value
+(Intercept)                                                2.026e+00  6.055e-02  33.462
+Data_typeTracked bird                                      5.417e-02  5.001e-02   1.083
+training_data_typeSimulated bird                          -9.963e-02  4.255e-02  -2.342
+training_data_typeTracked bird                             1.389e-01  4.255e-02   3.265
+Tower_count                                               -2.239e-02  7.056e-03  -3.174
+inteval_seconds                                            1.190e-02  4.004e-03   2.971
+mean_distance_from_tower                                   5.805e-04  5.607e-05  10.352
+Data_typeTracked bird:training_data_typeSimulated bird    -1.503e-02  5.348e-02  -0.281
+Data_typeTracked bird:training_data_typeTracked bird      -1.425e-01  5.348e-02  -2.664
+training_data_typeSimulated bird:mean_distance_from_tower  3.557e-04  7.759e-05   4.584
+training_data_typeTracked bird:mean_distance_from_tower   -3.180e-05  7.759e-05  -0.410
+                                                          Pr(>|t|)    
+(Intercept)                                                < 2e-16 ***
+Data_typeTracked bird                                      0.27910    
+training_data_typeSimulated bird                           0.01946 *  
+training_data_typeTracked bird                             0.00114 ** 
+Tower_count                                                0.00157 ** 
+inteval_seconds                                            0.00306 ** 
+mean_distance_from_tower                                   < 2e-16 ***
+Data_typeTracked bird:training_data_typeSimulated bird     0.77884    
+Data_typeTracked bird:training_data_typeTracked bird       0.00789 ** 
+training_data_typeSimulated bird:mean_distance_from_tower 5.36e-06 ***
+training_data_typeTracked bird:mean_distance_from_tower    0.68205    
 ---
 Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 
