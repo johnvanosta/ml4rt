@@ -1,4 +1,4 @@
-pacman::p_load(readxl,PerformanceAnalytics,stats,tidyverse,report,parameters,jtools,interactions,broom.mixed)
+pacman::p_load(readxl,PerformanceAnalytics,stats,tidyverse,report,parameters,jtools,interactions,broom.mixed,gridExtra)
 
 excel_path <- "Example_data/Output/Predictions/UTM_predictions_combined_dtypes_input_20230701.xlsx"
 
@@ -51,32 +51,102 @@ summary_df <- data.frame(summary_output)
 # Write the data frame to a CSV file
 write.csv(summary_df, "linear_model_summary.csv", row.names = FALSE)
 
+# Set consistent y label
+yl = expression(bold("log"[e]*"Positional error (m)"))
+
+theme_pub <- function() {
+  theme_bw() +
+    theme(panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          panel.border = element_blank(),
+          axis.line = element_line(size = 0.5),
+          legend.title = element_text(size = 9, face = "bold"),
+          legend.text = element_text(size = 8),
+          legend.key.size = unit(0.4, "cm"),
+          legend.key.height = unit(0.3, "cm"),
+          legend.background = element_rect(fill = "transparent"),
+          legend.position = "top",
+          axis.title = element_text(size = 9, face = "bold"),
+          axis.text = element_text(size = 8),
+          plot.title = element_text(size = 10, face = "bold", hjust = 0.5))
+}
+
 # Plots for interactions
-
-interact_plot(model1, pred = mean_distance_from_tower, 
+## Plot1
+plot1 <- interact_plot(model1, pred = mean_distance_from_tower, 
               modx = training_data_type, 
-              plot.points=FALSE, 
+              plot.points=TRUE,
+              point.size = 0.5,
               partial.resdiuals=TRUE, 
-              interval=TRUE, int.width = 0.8)
+              interval=FALSE, int.width = 0.95,
+              jitter = 0.2,
+              x.label = "Mean distance to tower",
+              y.label = yl,
+              legend.main = "Training dataset",
+              line.thickness = 0.8)
 
-interact_plot(model1, pred = mean_distance_from_tower, modx = Data_type)
+plot1 <- plot1 +
+  theme_pub() +
+  theme(legend.position = c(0.8, 0.15), legend.key.size = unit(1.3,"line")) +
+  labs(tag = "(B)") +
+  theme(plot.tag = element_text(size = 15)) +
+  scale_x_continuous(limits = c(0, 1600), breaks = seq(0, 1600, 400))
 
-interact_plot(model1, 
-              pred = mean_distance_from_tower,
-              modx = Data_type,
-              mod2 = training_data_type)
+plot(plot1)
 
-effect_plot(model1, pred = Tower_count,
-            interval = TRUE, 
+## Plot2
+plot2 <- effect_plot(model1, pred = Tower_count,
+            interval = FALSE, 
             plot.points = FALSE, 
-            partial.residuals = TRUE)
-
-effect_plot(model1, pred = inteval_seconds,
-            interval = TRUE, 
-            plot.points = FALSE, 
-            partial.residuals = TRUE)
-
-effect_plot(model1, pred = training_data_type,
-            interval = TRUE,
             partial.residuals = TRUE,
-            jitter = 0.2)
+            x.label = "Number of towers",
+            y.label = yl,
+            line.thickness = 0.5,
+            jitter = 0.15)
+
+plot2 <- plot2 +
+  theme_pub() +
+  scale_x_continuous(limits = c(0, 9), breaks = seq(0, 9, 1)) +
+  labs(tag = "(C)") +
+  theme(plot.tag = element_text(size = 15))
+
+plot(plot2)
+
+## Plot3
+plot3 <- effect_plot(model1, pred = inteval_seconds,
+            interval = TRUE,
+            int.width = 0.95,
+            partial.residuals = FALSE,
+            x.label = "Tag interval (seconds)",
+            y.label = yl)
+
+plot3 <- plot3 +
+  theme_pub() +
+  labs(tag = "(D)") +
+  theme(plot.tag = element_text(size = 15))
+
+plot(plot3)
+
+## Plot4
+plot4 <- cat_plot(model1, pred = training_data_type, modx = Data_type,
+         plot.points = FALSE,
+         interval = TRUE,
+         int.width = 0.95,
+         x.label = "Training dataset",
+         y.label = yl,
+         legend.main = "Testing dataset",
+         line.thickness = 0.8)
+
+plot4 <- plot4 +
+  theme_pub() +
+  labs(tag = "(A)") +
+  theme(plot.tag = element_text(size = 15), legend.position = c(0.22, 0.95))
+
+plot(plot4)
+
+## # Arrange subplots in a grid layout with labels
+plot_grid <- grid.arrange(plot4, plot1, plot2, plot3, ncol=2, nrow=2)
+plot(plot_grid)
+
+ggsave("Paper_results/Figures/positional_error_covariates_20230709.png", plot = plot_grid,
+       width = 170, height = 170, units = "mm", dpi = 300)
