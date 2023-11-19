@@ -1,21 +1,18 @@
 pacman::p_load(readxl,PerformanceAnalytics,stats,tidyverse,report,parameters,jtools,interactions,broom,gridExtra,RESI,DHARMa,sjPlot)
 
-excel_path <- "Example_data/Output/Predictions/UTM_predictions_combined_dtypes_input_20230701.xlsx"
+excel_path <- "Example_data/Output/Predictions/UTM_predictions_1group_20231119.xlsx"
 
 predict_df <- read_excel(excel_path)
 
-predict_df$log_error_m <- log(predict_df$error_m, base = exp(1))
-predict_df$log_mean_distance_from_tower <- log(predict_df$mean_distance_from_tower, base = exp(1))
+predict_df$log_error_m <- log10(predict_df$error_m)
+predict_df$log_mean_distance_from_tower <- log10(predict_df$mean_distance_from_tower)
 predict_df$inteval_seconds <- as.factor(predict_df$inteval_seconds)
-
-# Filter data to predictions on tracked birds (excluding simulated birds)
-predict_df <- predict_df[predict_df$Data_type == 'Tracked bird', ]
 
 head(predict_df)
 
 #predict_df$inteval_seconds <- as.factor(predict_df$inteval_seconds)
 model1 <- lm(log_error_m ~ training_data_type + Tower_count +
-               inteval_seconds + log_mean_distance_from_tower * training_data_type + Power, 
+               inteval_seconds + log_mean_distance_from_tower + Power, 
              data = predict_df)
 
 summary(model1)
@@ -26,7 +23,6 @@ resi.obj = resi(model1, nboot = 100, store.boot = TRUE, alpha = 0.05)
 anova(resi.obj, alpha = 0.05)
 simulationOutput <- simulateResiduals(fittedModel = model1, plot = F)
 plot(simulationOutput)
-
 
 # Residual plot for homoscedasticity
 plot(fitted(model1), residuals(model1), main = "Residuals vs. Fitted Values", xlab = "Fitted Values", ylab = "Residuals")
@@ -57,8 +53,8 @@ summary_df <- data.frame(summary_output)
 write.csv(summary_df, "linear_model_summary.csv", row.names = FALSE)
 
 # Set consistent y label
-yl = expression(bold("log"[e]*"Positional error (m)"))
-pos_error_label = expression(bold("log"[e]*"Mean distance to tower (m)"))
+yl = expression(bold("log"[10]*"Positional error (m)"))
+pos_error_label = expression(bold("log"[10]*"Mean distance to tower (m)"))
 
 theme_pub <- function() {
   theme_bw() +
@@ -79,12 +75,10 @@ theme_pub <- function() {
 
 # Plots for interactions
 ## Plot1
-plot1 <- interact_plot(model1, pred = log_mean_distance_from_tower, 
-              modx = training_data_type, 
+plot1 <- effect_plot(model1, pred = log_mean_distance_from_tower, 
               plot.points=TRUE,
-              point.size = 0.5,
               partial.resdiuals=TRUE, 
-              interval=FALSE, int.width = 0.95,
+              interval=FALSE, 
               jitter = 0.2,
               x.label = pos_error_label,
               y.label = yl,
@@ -95,8 +89,7 @@ plot1 <- plot1 +
   theme_pub() +
   theme(legend.position = c(0.8, 0.15), legend.key.size = unit(1.3,"line")) +
   labs(tag = "(B)") +
-  theme(plot.tag = element_text(size = 15)) +
-  scale_x_continuous(limits = c(3, 8), breaks = seq(0, 10, 1))
+  theme(plot.tag = element_text(size = 15))
 
 plot(plot1)
 
@@ -132,7 +125,7 @@ plot3 <- plot3 +
 plot(plot3)
 
 ## Plot4
-plot4 <- cat_plot(model1, pred = training_data_type,
+plot4 <- effect_plot(model1, pred = training_data_type,
          plot.points = FALSE,
          interval = TRUE,
          int.width = 0.95,
@@ -147,15 +140,13 @@ plot4 <- plot4 +
   labs(tag = "(A)") +
   theme(plot.tag = element_text(size = 15), legend.position = c(0.22, 0.95))
 
-plot4 <- plot4 + scale_y_continuous(scale_x_continuous(trans = "log10"))
-
 plot(plot4)
 
 ## # Arrange subplots in a grid layout with labels
 plot_grid <- grid.arrange(plot4, plot1, plot2, plot3, ncol=2, nrow=2)
 plot(plot_grid)
 
-ggsave("Paper_results/Figures/positional_error_covariates_20231118.png", plot = plot_grid,
+ggsave("Paper_results/Figures/positional_error_covariates_20231119.png", plot = plot_grid,
        width = 170, height = 170, units = "mm", dpi = 300)
 
 
