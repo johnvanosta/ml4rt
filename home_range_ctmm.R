@@ -7,14 +7,16 @@ rm(list = ls())
 # Load libraries
 pacman::p_load(dplyr, readr, openxlsx, readxl, ggplot2, lubridate, ctmm, data.table)
 
+base_dir <- "C:/Users/John/Documents/GitHub/ml4rt/Example_data/Output/Predictions/MovementEcologyPaper/ctmm_output"
+
 # Import the xlsx file for transect data
-art_data <- read_excel("C:/Users/s5236256/Documents/GitHub/ml4rt/Example_data/Output/Predictions/MovementEcologyPaper/predictions_active_tags_20231209.xlsx")
+art_data <- read_excel("C:/Users/John/Documents/GitHub/ml4rt/Example_data/Output/Predictions/MovementEcologyPaper/predictions_active_tags_20231209.xlsx")
 
 # Import the xlsx file for the individual locations, excluding ART data
-indiv_locs_ex_art <- read_excel("C:/Users/s5236256/Documents/GitHub/ml4rt/Example_data/Output/Predictions/MovementEcologyPaper/BTF_Individual_Locations_20230718.xlsx")
+indiv_locs_ex_art <- read_excel("C:/Users/John/Documents/GitHub/ml4rt/Example_data/Output/Predictions/MovementEcologyPaper/BTF_Individual_Locations_20230718.xlsx")
 
 # Import the xlsx file for the tag list
-tag_list <- read_excel("C:/Users/s5236256/Documents/GitHub/ml4rt/Example_data/Output/Predictions/MovementEcologyPaper/Tag_List.xlsx")
+tag_list <- read_excel("C:/Users/John/Documents/GitHub/ml4rt/Example_data/Output/Predictions/MovementEcologyPaper/Tag_List.xlsx")
 
 ############### Data structuring ######################
 # Merge art_data with tag_list
@@ -89,57 +91,48 @@ locs4ctmm <- locs4ctmm %>%
 # and for AKDE method: https://ecoisilva.github.io/AKDE_minireview/code/AKDE_R-tutorial.html
 
 # Set variables for the loop
-base_dir <- "C:/Users/s5236256/Documents/GitHub/ml4rt/Example_data/Output/Predictions/MovementEcologyPaper/ctmm_output"
 locs <- as.telemetry(locs4ctmm)
 
 # Load existing home_range_data if it exists
-if(file.exists(file.path(base_dir, "home_range_data.xlsx"))) {
-  home_range_data <- read_xlsx(file.path(base_dir, "home_range_data.xlsx"))
-} else {
-  home_range_data <- data.frame(Name = character(), Rows = integer(), FitSuccess = logical(), stringsAsFactors = FALSE)
-}
+#if(file.exists(file.path(base_dir, "home_range_data.xlsx"))) {
+  #home_range_data <- read_xlsx(file.path(base_dir, "home_range_data.xlsx"))
+#} else {
+  #home_range_data <- data.frame(Name = character(), Rows = integer(), FitSuccess = logical(), stringsAsFactors = FALSE)
+#}
 
 # Load existing FITS if it exists
-if(file.exists(file.path(base_dir, "FITS.rds"))) {
-  FITS <- readRDS(file.path(base_dir, "FITS.rds"))
-} else {
-  FITS <- list()
-}
+#if(file.exists(file.path(base_dir, "FITS.rds"))) {
+  #FITS <- readRDS(file.path(base_dir, "FITS.rds"))
+#} else {
+  #FITS <- list()
+#}
 
-BOOTS <- list()
 GUESS <- list()
+FITS <- list()
+home_range_data <- data.frame(Name = character(), Rows = integer(), FitSuccess = logical(), stringsAsFactors = FALSE)
 
 for(i in 1:length(locs)) {
   current_name <- names(locs[i])
   print(current_name)
   # Skip if Name is already in home_range_data
-  if(!(current_name %in% home_range_data$Name)) {
-    print(nrow(locs[[i]]))
-    tryCatch({
-      # Run the bootstrapping step only if nrow is 5 or less
-      if (nrow(locs[[i]]) <= 5) {
-        GUESS[[i]] <- ctmm.guess(locs[[i]], interactive = FALSE)
-        FITS[[i]] <- ctmm.select(locs[[i]], GUESS[[i]], method = 'pHREML')
-        FITS[[i]] <- ctmm.boot(locs[[i]], FITS[[i]], trace = 2)
-      }
-      else {
-        # Else use pHREML
-        GUESS[[i]] <- ctmm.guess(locs[[i]], CTMM=ctmm(error=TRUE), interactive = FALSE)
-        FITS[[i]] <- ctmm.select(locs[[i]], GUESS[[i]], method = 'pHREML')
-      }
+  print(nrow(locs[[i]]))
+  tryCatch({
+    # Run the bootstrapping step only if nrow is 5 or less
+      GUESS[[i]] <- ctmm.guess(locs[[i]], CTMM=ctmm(error=TRUE), interactive = FALSE)
+      FITS[[i]] <- ctmm.select(locs[[i]], GUESS[[i]], method = 'pHREML')
       
       # Record success
       home_range_data <- rbind(home_range_data, data.frame(Name = current_name, Rows = nrow(locs[[i]]), FitSuccess = TRUE))
-    }, error = function(e) {
+  }, error = function(e) {
       # Record failure
       home_range_data <- rbind(home_range_data, data.frame(Name = current_name, Rows = nrow(locs[[i]]), FitSuccess = FALSE))
-    })
+  })
     
-    # Save FITS after each iteration
-    saveRDS(FITS, file = file.path(base_dir, "FITS.rds"))
+  # Save FITS after each iteration
+  saveRDS(FITS, file = file.path(base_dir, "FITS.rds"))
     
-    # Save home_range_data as Excel after each iteration
-    write.xlsx(home_range_data, file.path(base_dir, "home_range_data.xlsx"))
+  # Save home_range_data as Excel after each iteration
+  write.xlsx(home_range_data, file.path(base_dir, "home_range_data.xlsx"))
   }
 }
 # calculate AKDES on a consistent grid
@@ -148,33 +141,96 @@ AKDES <- akde(locs,FITS,weights=TRUE)
 
 saveRDS(AKDES, file = file.path(base_dir, "AKDES.rds"))
 
+nrow(FITS)
 
-i = 11
-print(nrow(locs[[i]]))
+#i = 11
+#print(nrow(locs[[i]]))
 
-single_tag <- locs[[i]]
+#single_tag <- locs[[i]]
 
-GUESS <- ctmm.guess(single_tag, interactive = FALSE)
-FITS <- ctmm.select(single_tag, GUESS, method = 'pHREML')
-BOOTS <- ctmm.boot(single_tag, FITS, iterate = TRUE, trace = TRUE)
+#GUESS <- ctmm.guess(single_tag, interactive = FALSE)
+#FITS <- ctmm.select(single_tag, GUESS, method = 'pHREML')
+#BOOTS <- ctmm.boot(single_tag, FITS, iterate = TRUE, trace = TRUE, parallel=FALSE)
     
-require(parallel)
-cores <- detectCores() 
+#require(parallel)
+#cores <- detectCores() 
     
 
 ### Try population level analyses
 # https://besjournals.onlinelibrary.wiley.com/doi/epdf/10.1111/2041-210X.13815
 # https://streaming.uni-konstanz.de/paella/?tx_uknkimstreams_player%5Baction%5D=player&tx_uknkimstreams_player%5Bcode%5D=AniMove_2022-09-16_04&tx_uknkimstreams_player%5Bcontroller%5D=StreamList&tx_uknkimstreams_player%5Btitle%5D=&cHash=8a5b5a07f6049d52ad3c38fcf4f047a5
 
-COL <- color(AKDES, by = 'individual')
+FITS <- readRDS(file.path(base_dir, "FITS.rds"))
+AKDES <- readRDS(file.path(base_dir, "AKDES.rds"))
 
-plot(AKDES, col.DF = COL, col.level = COL, col.grid = NA, level = NA)
+# Filter out some AKDES and locs
+is_not_ctmm <- sapply(AKDES, function(x) class(x) != "ctmm")
 
+# Filter out elements of class 'ctmm'
+AKDES_filtered <- AKDES[is_not_ctmm]
+locs_filtered <- locs[is_not_ctmm]
+
+
+
+## Check locations on index 88 and possibly remove
+
+
+
+AREAS <- lapply(AKDES_filtered,summary)
+
+AREAS[[1]]$CI
+
+for(i in 1:length(AREAS)){
+  print(i)
+  print(AREAS[[i]]$CI)
+}
+
+for(i in 1:length(AKDES)){
+  print(i)
+  sample_size <- nrow(locs[[i]])
+  ci <- summary(AKDES[[i]])$CI
+}
+
+
+
+i=12
+summary(AKDES[[i]])$CI
+summary(AKDES[[i]])$CI[1, "est"]
+
+
+
+# Remove troublesome AKDES from the AKDES list
+AKDES[[16]] <- NULL
+AKDES[[40]] <- NULL
+AKDES[[79]] <- NULL
+AKDES[[81]] <- NULL
+AKDES[[110]] <- NULL
+AKDES[[174]] <- NULL
+
+
+
+# Identify elements of class 'ctmm'
+is_not_ctmm <- sapply(AKDES, function(x) class(x) != "ctmm")
+
+# Filter out elements of class 'ctmm'
+AKDES_filtered <- AKDES[is_not_ctmm]
+locs_filtered <- locs[is_not_ctmm]
+
+COL <- color(AKDES_filtered, by = 'individual')
+
+plot(AKDES_filtered, col.DF = COL, col.level = COL, col.grid = NA, level = NA)
+
+### Need to make sure that ctmm is the latest version
 # cluster analysis
 cluster(AKDES, sort = TRUE)
 
 # Mean home ranges, sorted largest to smallest individual
-meta(AKDES, col = c(COL, "black"), verbose = TRUE, sort = TRUE)
+meta(AKDES_filtered, col = c(COL, "black"), verbose = TRUE, sort = FALSE)
+
+# funnel plot to check for sampling bias
+funnel(AKDES_filtered,locs_filtered, level=0.5)
+
+overlap(AKDES)
 
 # Compare groups
 ### Example code, but adjust for season and maybe sex
@@ -188,29 +244,27 @@ MEAN.FITS <- mean(FITS)
 summary(MEAN.FITS)
 
 ## Mean population range
-MEAN <- mean(AKDES)
-plot(locs, MEAN)
+MEAN <- mean(AKDES_filtered)
+plot(locs_filtered, MEAN)
 
 ## Better (and newer) function is to use the population KDE function
-PKDE <- pkde(locs, AKDES)
+PKDE <- pkde(locs_filtered, AKDES_filtered)
 
 summary(PKDE)$CI
 
 ## See if this can be exported as a shapefile too
 
+
+
+# extract 95% areas
+AREAS <- lapply(AKDES,summary)
+
+# log transform for further meta-analysis
+LOG <- Log(AREAS)
+
+
+
 ### Export home ranges
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
