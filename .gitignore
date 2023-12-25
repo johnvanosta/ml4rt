@@ -2,3 +2,8 @@
 .Rhistory
 .RData
 .Ruserdata
+Example_data/Output/Predictions/MovementEcologyPaper/ctmm_output/FITS.rds
+Example_data/Output/Predictions/MovementEcologyPaper/ctmm_output/AKDES.rds
+Example_data/Output/Predictions/MovementEcologyPaper/ctmm_output/Superseded/PKDES.rds
+*.rds
+Example_data/Output/Predictions/MovementEcologyPaper/~$Supplementary_2_home_range_data.xlsx
