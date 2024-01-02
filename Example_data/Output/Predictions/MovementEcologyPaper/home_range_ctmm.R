@@ -158,7 +158,7 @@ sample_size_plot <- ggplot(result_df, aes(x = DOF_area, y = mean_UD_95_ha)) +
   geom_hline(yintercept = median_UD_95_ha, linetype = "dashed", color = "blue") +  # Add dashed mean line
   scale_y_log10() +
   theme_bw() +
-  labs(x = "Effective sample size (DOF)", y = "Mean 95% home range (hectares)")
+  labs(x = "Effective sample size (DOF)", y = "95% home range (hectares)")
 plot(sample_size_plot)
 
 ggsave("figures/sample_size_plot_20231225.png", sample_size_plot, units = 'cm', width = 16, height = 10, dpi = 300)
