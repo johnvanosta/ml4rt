@@ -17,7 +17,7 @@ def postprocess_data(prediction_data, tower_locs):
     # Add UTM zone details
     prediction_data['zone_number'] = prediction_data['TowerID'].map(zone_number).fillna(0)
     prediction_data['zone_letter'] = prediction_data['TowerID'].map(zone_letter).fillna(0)
-
+    
     return prediction_data
 
 def location_averaging(prediction_data):

@@ -13,7 +13,7 @@ setwd("~/GitHub/ml4rt/Example_data/Output/Predictions/MovementEcologyPaper")
 base_dir <- "ctmm_output"
 
 # Import the xlsx file for transect data
-locs4ctmm <- read_excel("ctmm_input/ctmm_input_20231222.xlsx")
+locs4ctmm <- read_excel("ctmm_input/ctmm_input_20240107.xlsx")
 
 ############## for testing!!!
 # Extract the first two unique IDs and create a subset of locs4ctmm with only the first two unique IDs
@@ -52,18 +52,18 @@ for(i in 1:length(locs)) {
   saveRDS(FITS, file = file.path(base_dir, "FITS_.rds"))
     
   # Save home_range_data as Excel after each iteration
-  write.xlsx(home_range_data, file.path(base_dir, "home_range_data.xlsx"))
+  write.xlsx(home_range_data, file.path(base_dir, "home_range_data_20240107.xlsx"))
   }
 }
 
 # Define the indices where you want to select the second, third sublist, else return first
-indices_2 <- c(1, 15, 16, 19, 23, 25, 37, 41, 42, 46, 49, 57, 64, 66, 68, 95, 117)
-indices_3 <- c(94)
-indices_4 <- c(73, 135)
-indices_5 <- c(31, 36, 52, 54, 82, 103, 124) ## Add this
-indices_6 <- c(56) ## Add this
-indices_7 <- c(11) ## Add this
-indices_ctmm <- c(17, 20, 22, 24, 27, 33, 34, 35, 40, 48, 51, 59, 61, 62, 72, 75, 76, 81, 85, 86, 99, 108, 111, 134)
+indices_2 <- c(11, 19, 20, 21, 23, 38, 52, 57, 64, 67, 69, 84, 97, 113, 120, 139, 141)
+indices_3 <- c()
+indices_4 <- c(15, 25, 26, 42, 58, 72, 89)
+indices_5 <- c(33, 40, 49, 62, 93, 123)
+indices_6 <- c(134)
+indices_7 <- c()
+indices_ctmm <- c(22, 28, 29, 31, 32, 34, 37, 39, 44, 46, 47, 53, 55, 59, 66, 71, 73, 76, 78, 79, 124)
 
 # Create a new list with the selected sublists using lapply
 FITS_select <- lapply(seq_along(FITS), function(i) {
@@ -84,10 +84,13 @@ FITS_select <- lapply(seq_along(FITS), function(i) {
   }
 })
 
-i <- 135
+i <- 89
 summary(FITS[[i]])
-AKDES_single <- akde(locs[[i]],FITS[[i]][[4]],weights=TRUE)
-class(AKDES_single[[1]])
+for (j in 1:9) {
+  print(j)
+  AKDES_single <- akde(locs[[i]], FITS[[i]][[j]], weights = TRUE)
+  print(class(AKDES_single[[1]]))
+}
 
 # calculate AKDES on a consistent grid
 AKDES <- list()
@@ -176,8 +179,8 @@ AKDES_UD_50_meta <- meta(AKDES_UD, verbose=TRUE, sort=FALSE, level=0.95, level.U
 print(AKDES_UD_50_meta)
 
 # Write to Excel
-write.xlsx(AKDES_UD_95_meta, file = "AKDES_UD_95_meta_20231225.xlsx")
-write.xlsx(AKDES_UD_50_meta, file = "AKDES_UD_50_meta_20231225.xlsx")
+write.xlsx(AKDES_UD_95_meta, file = "AKDES_UD_95_meta_20240108.xlsx")
+write.xlsx(AKDES_UD_50_meta, file = "AKDES_UD_50_meta_20240108.xlsx")
 
 ### Export individual an population home ranges as geotiff and esri shape
 # Export individual home ranges

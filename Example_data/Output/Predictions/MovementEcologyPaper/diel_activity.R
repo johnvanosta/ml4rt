@@ -168,7 +168,85 @@ groupwiseCMH(contingency_table,
              digits  = 3)
 
 #### Looking at seasonal difference of activities only
+activity_Time_of_day <- activity_records %>%
+  mutate(
+    Time_of_day = case_when(
+      clock_solar_corrected >= 19 | clock_solar_corrected < 6 ~ "night",
+      clock_solar_corrected >= 6 & clock_solar_corrected < 7 ~ "twilight",
+      clock_solar_corrected >= 7 & clock_solar_corrected < 9 ~ "early morning",
+      clock_solar_corrected >= 9 & clock_solar_corrected < 11 ~ "late morning",
+      clock_solar_corrected >= 11 & clock_solar_corrected < 14 ~ "midday",
+      clock_solar_corrected >= 14 & clock_solar_corrected < 16 ~ "early afternoon",
+      clock_solar_corrected >= 16 & clock_solar_corrected < 18 ~ "late afternoon",
+      clock_solar_corrected >= 18 & clock_solar_corrected < 19 ~ "twilight",
+      TRUE ~ as.character(NA)
+    )
+  ) %>%
+  filter(Time_of_day != "night", Time_of_day != "twilight") %>%
+  group_by(Season, Time_of_day, activity) %>%
+  summarise(count = n(), .groups = 'drop') %>%
+  group_by(Season, Time_of_day) %>%
+  mutate(total_count = sum(count), proportion = count / total_count)
 
+# Create a complete set of combinations to fill in zeros for the model
+all_combinations <- expand.grid(
+  Season = unique(activity_records$Season),
+  Time_of_day = c("early morning", "late morning", "midday", "early afternoon", "late afternoon"),
+  activity = unique(activity_records$activity)
+)
+
+expanded_activity <- left_join(all_combinations, activity_Time_of_day, by = c("Season", "Time_of_day", "activity"))
+
+expanded_activity$count[is.na(expanded_activity$count)] <- 0
+expanded_activity$total_count[is.na(expanded_activity$total_count)] <- 0
+expanded_activity$proportion[is.na(expanded_activity$proportion)] <- 0
+
+expanded_activity <- expanded_activity %>%
+  mutate(Time_of_day = factor(Time_of_day, levels = c("early morning", "late morning", "midday", "early afternoon", "late afternoon"))) %>%
+  group_by(activity) %>%
+  mutate(
+    mean_proportion = mean(proportion, na.rm = TRUE),
+    sd_proportion = sd(proportion, na.rm = TRUE),
+    standardised_proportion = (proportion - mean_proportion) / sd_proportion
+  ) %>%
+  ungroup()
+
+#m1 <- glmmTMB(proportion ~ activity/Season + activity:Season + activity:Time_of_day, 
+#data=expanded_activity, 
+#family=tweedie())
+
+m1 <- lm(proportion ~ activity/Season + activity:Season + activity:Time_of_day, 
+         data=expanded_activity)
+
+summary(m1)
+
+simulated_res <- simulateResiduals(fittedModel = m1)
+plot(simulated_res)
+
+plot_model(m1, line.color = "red", sort.est = TRUE, type = "std", show.values = TRUE, value.offset = .3)
+
+# Extract model estimates
+estimates <- tidy(m1, conf.int = TRUE)
+
+#write.xlsx(estimates, file = "figures/glm_model_estimates_diel_patterns_20240103.xlsx")
+
+nrow(expanded_activity)
+r.squaredGLMM(m1)
+
+## glm cheat sheet: https://www.usabart.nl/eval/cs-generalized%20linear%20mixed%20effects.pdf
+
+
+# Export the dataframe used for the stats
+#write.xlsx(expanded_activity, file = "activity_summary_20240103.xlsx", rowNames=TRUE)
+
+
+
+
+
+
+
+
+### Backup code with less splits of time categories
 activity_Time_of_day <- activity_records %>%
   mutate(
     Time_of_day = case_when(
@@ -215,17 +293,40 @@ summary(m1)
 simulated_res <- simulateResiduals(fittedModel = m1)
 plot(simulated_res)
 
-plot_model(m1, line.color = "red", sort.est = TRUE, type = "std", show.values = TRUE, value.offset = .3)
 
-# Extract model estimates
-estimates <- tidy(m1, conf.int = TRUE)
 
-write.xlsx(estimates, file = "figures/glm_model_estimates_diel_patterns_20231231.xlsx")
 
-nrow(expanded_activity)
-r.squaredGLMM(m1)
 
-## glm cheat sheet: https://www.usabart.nl/eval/cs-generalized%20linear%20mixed%20effects.pdf
+
+
+
+
+
+
+
+
+
+
+
+
+
+#### Try splitting time of day in five categories
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
