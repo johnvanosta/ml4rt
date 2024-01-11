@@ -1,0 +1,17 @@
+OBJECTID *,Shape *,RE_Code,PERCENT,BVG1M,BIODIVERSITY_STATUS,VM_CLASS,LAND_ZONE,Consultant,Veg_Class,Veg_Type,AreaHA,RE_ID,RE_Code_v11,Shape_Length,Shape_Area
+1,Polygon,10.3.6,100,17a,No concern at present,Least concern,3,Ecological Australia,Remnant,<Null>,18.751442,10.3.6,10.3.6ax1,3705.034119,187393.0348
+2,Polygon,10.3.6,100,17a,No concern at present,Least concern,3,Ecological Australia,Remnant,<Null>,19.004853,10.3.6,10.3.6ax1,2481.068331,189921.2486
+3,Polygon,10.5.1a/10.5.1d,70/30,17c/17c,No concern at present,Least concern,5,Ecological Australia,Remnant,<Null>,1.551038,<Null>,10.5.1a/10.5.1d,530.050814,15499.74627
+4,Polygon,10.5.1a/10.5.1d,70/30,17c/17c,No concern at present,Least concern,5,Ecological Australia,Remnant,<Null>,0.076961,<Null>,10.5.1a/10.5.1d,184.135525,769.114191
+5,Polygon,10.5.1a/10.5.1d,70/30,17c/17c,No concern at present,Least concern,5,Ecological Australia,Remnant,<Null>,23.781748,<Null>,10.5.1a/10.5.1d,2423.332851,237657.6252
+6,Polygon,10.5.1d/10.5.1a,70/30,17c/17c,No concern at present,Least concern,5,Ecological Australia,Remnant,<Null>,9.346016,<Null>,10.5.1d/10.5.1a,1899.952368,93399.77214
+7,Polygon,10.5.5a,100,17b,No concern at present,Least concern,5,Ecological Australia,Remnant,<Null>,4.180713,10.5.5,10.5.5a,1123.481124,41777.87149
+8,Polygon,10.5.5a,100,17b,No concern at present,Least concern,5,Ecological Australia,Remnant,<Null>,231.096412,10.5.5,10.5.5a,18896.41749,2309448.511
+9,Polygon,10.5.5a,100,17b,No concern at present,Least concern,5,Ecological Australia,Remnant,<Null>,50.890216,10.5.5,10.5.5a,4889.511744,508553.8347
+10,Polygon,10.3.6,100,17a,No concern at present,Least concern,3,Ecological Australia,Remnant,<Null>,0.403146,10.3.6,10.3.6ax1,327.685371,4028.8426
+11,Polygon,10.3.6,100,17a,No concern at present,Least concern,3,Ecological Australia,Remnant,<Null>,2.355057,10.3.6,10.3.6ax1,990.047717,23535.13078
+12,Polygon,10.3.6,100,17a,No concern at present,Least concern,3,Ecological Australia,Remnant,<Null>,3.762158,10.3.6,10.3.6ax1,817.817898,37596.98443
+13,Polygon,10.5.5a,100,17b,No concern at present,Least concern,5,E2M,Remnant,<Null>,0.543412,10.5.5,10.5.5a,415.642285,5430.468074
+14,Polygon,10.5.1a/10.5.1d,70/30,17c/17c,No concern at present,Least concern,5,Ecological Australia,Remnant,<Null>,7.018172,<Null>,10.5.1a/10.5.1d,2071.514717,70134.63578
+15,Polygon,10.5.1a/10.5.1d,70/30,17c/17c,No concern at present,Least concern,5,Ecological Australia,Remnant,<Null>,58.775398,<Null>,10.5.1a/10.5.1d,3024.254565,587360.4057
+16,Polygon,10.3.6,100,17a,No concern at present,Least concern,3,Ecological Australia,Remnant,<Null>,1.40582,10.3.6,10.3.6ax1,520.217667,14048.54806
