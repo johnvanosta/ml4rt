@@ -7,57 +7,25 @@ rm(list = ls())
 # Load libraries
 pacman::p_load(dplyr, readr, openxlsx, readxl, ggplot2, lubridate, ctmm, data.table)
 
-base_dir <- "C:/Users/JohnvanOsta/Documents/GitHub/ml4rt/Example_data/Output/Predictions/MovementEcologyPaper/ctmm_output"
+# Set working directory
+setwd("~/GitHub/ml4rt/Example_data/Output/Predictions/MovementEcologyPaper")
+
+base_dir <- "ctmm_output"
 
 # Import the xlsx file for transect data
-locs4ctmm <- read_excel("C:/Users/JohnvanOsta/Documents/GitHub/ml4rt/Example_data/Output/Predictions/MovementEcologyPaper/ctmm_input/ctmm_input_20231219.xlsx")
-
+locs4ctmm <- read_excel("ctmm_input/ctmm_input_20231222.xlsx")
 
 ############## for testing!!!
 # Extract the first two unique IDs and create a subset of locs4ctmm with only the first two unique IDs
-#unique_ids <- unique(locs4ctmm$ID)[1:2]
+#unique_ids <- unique(locs4ctmm$ID)[10:11]
 #locs4ctmm <- filter(locs4ctmm, ID %in% unique_ids)
 
 ############### Calculate home ranges in ctmm ######################
 # Following tutorial here (for error estimation): https://ctmm-initiative.github.io/ctmm/articles/error.html
 # and for AKDE method: https://ecoisilva.github.io/AKDE_minireview/code/AKDE_R-tutorial.html
 
-# Set variables for the loop
+# Convert for input into ctmm
 locs <- as.telemetry(locs4ctmm)
-
-# Load existing home_range_data if it exists
-#if(file.exists(file.path(base_dir, "home_range_data.xlsx"))) {
-  #home_range_data <- read_xlsx(file.path(base_dir, "home_range_data.xlsx"))
-#} else {
-  #home_range_data <- data.frame(Name = character(), Rows = integer(), FitSuccess = logical(), stringsAsFactors = FALSE)
-#}
-
-# Load existing FITS if it exists
-#if(file.exists(file.path(base_dir, "FITS.rds"))) {
-  #FITS <- readRDS(file.path(base_dir, "FITS.rds"))
-#} else {
-  #FITS <- list()
-#}
-
-
-
-locs <- locs[1:5]
-
-guess_list <- lapply(locs,
-                     function(tele)
-                       ctmm::ctmm.guess(tele, interactive = TRUE))
-
-single_tag <- locs[[1]]
-GUESS <- ctmm.guess(single_tag, CTMM=ctmm(error=TRUE), interactive = FALSE)
-FITS <- ctmm.fit(single_tag,GUESS)
-
-FITS <- ctmm.select(single_tag, OUF, verbose=TRUE)
-
-summary(FITS)
-
-## Try this
-# https://groups.google.com/g/ctmm-user/c/4mOrouH-2Ws
-
 
 GUESS <- list()
 FITS <- list()
@@ -70,8 +38,8 @@ for(i in 1:length(locs)) {
   print(nrow(locs[[i]]))
   tryCatch({
     # Run the bootstrapping step only if nrow is 5 or less
-      GUESS[[i]] <- ctmm.guess(locs[[i]], CTMM=ctmm(error=TRUE), interactive = FALSE)
-      FITS[[i]] <- ctmm.select(locs[[i]], GUESS[[i]], method = 'pHREML')
+      GUESS[[i]] <- ctmm.guess(locs[[i]], CTMM=ctmm(error=TRUE), interactive = FALSE) 
+      FITS[[i]] <- ctmm.select(locs[[i]], GUESS[[i]], method = 'pHREML', verbose=TRUE)
       
       # Record success
       home_range_data <- rbind(home_range_data, data.frame(Name = current_name, Rows = nrow(locs[[i]]), FitSuccess = TRUE))
@@ -81,263 +49,163 @@ for(i in 1:length(locs)) {
   })
     
   # Save FITS after each iteration
-  saveRDS(FITS, file = file.path(base_dir, "FITS.rds"))
+  saveRDS(FITS, file = file.path(base_dir, "FITS_.rds"))
     
   # Save home_range_data as Excel after each iteration
   write.xlsx(home_range_data, file.path(base_dir, "home_range_data.xlsx"))
   }
 }
 
+# Define the indices where you want to select the second, third sublist, else return first
+indices_2 <- c(1, 15, 16, 19, 23, 25, 37, 41, 42, 46, 49, 57, 64, 66, 68, 95, 117)
+indices_3 <- c(94)
+indices_4 <- c(73, 135)
+indices_5 <- c(31, 36, 52, 54, 82, 103, 124) ## Add this
+indices_6 <- c(56) ## Add this
+indices_7 <- c(11) ## Add this
+indices_ctmm <- c(17, 20, 22, 24, 27, 33, 34, 35, 40, 48, 51, 59, 61, 62, 72, 75, 76, 81, 85, 86, 99, 108, 111, 134)
+
+# Create a new list with the selected sublists using lapply
+FITS_select <- lapply(seq_along(FITS), function(i) {
+  if (i %in% indices_2) {
+    return(FITS[[i]][[2]])  # Select the sublists for special indices
+  } else if (i %in% indices_3) {
+    return(FITS[[i]][[3]])
+  } else if (i %in% indices_4) {
+    return(FITS[[i]][[4]])
+  } else if (i %in% indices_5) {
+    return(FITS[[i]][[5]])
+  } else if (i %in% indices_6) {
+    return(FITS[[i]][[6]])
+  } else if (i %in% indices_7) {
+    return(FITS[[i]][[7]])
+  } else {
+    return(FITS[[i]][[1]])  # Select the first sublist otherwise
+  }
+})
+
+i <- 135
+summary(FITS[[i]])
+AKDES_single <- akde(locs[[i]],FITS[[i]][[4]],weights=TRUE)
+class(AKDES_single[[1]])
+
 # calculate AKDES on a consistent grid
 AKDES <- list()
-AKDES <- akde(locs,FITS,weights=TRUE, debias=TRUE)
+AKDES <- akde(locs,FITS_select,weights=TRUE,kernel="population")
 
 saveRDS(AKDES, file = file.path(base_dir, "AKDES.rds"))
 
-nrow(FITS)
-
-#i = 11
-#print(nrow(locs[[i]]))
-
-#single_tag <- locs[[i]]
-
-#GUESS <- ctmm.guess(single_tag, interactive = FALSE)
-#FITS <- ctmm.select(single_tag, GUESS, method = 'pHREML')
-#BOOTS <- ctmm.boot(single_tag, FITS, iterate = TRUE, trace = TRUE, parallel=FALSE)
-    
-#require(parallel)
-#cores <- detectCores() 
-    
-
-### Try population level analyses
-# https://besjournals.onlinelibrary.wiley.com/doi/epdf/10.1111/2041-210X.13815
-# https://streaming.uni-konstanz.de/paella/?tx_uknkimstreams_player%5Baction%5D=player&tx_uknkimstreams_player%5Bcode%5D=AniMove_2022-09-16_04&tx_uknkimstreams_player%5Bcontroller%5D=StreamList&tx_uknkimstreams_player%5Btitle%5D=&cHash=8a5b5a07f6049d52ad3c38fcf4f047a5
-
+##### Import data if needed
 FITS <- readRDS(file.path(base_dir, "FITS.rds"))
 AKDES <- readRDS(file.path(base_dir, "AKDES.rds"))
 
-# Filter out some AKDES and locs
-is_not_ctmm <- sapply(AKDES, function(x) class(x) != "ctmm")
+# Filter out the ctmm indices to create a population KDE
+AKDES_UD <- AKDES[-indices_ctmm]
+locs_UD <- locs[-indices_ctmm]
 
-# Filter out elements of class 'ctmm'
-AKDES_filtered <- AKDES[is_not_ctmm]
-locs_filtered <- locs[is_not_ctmm]
+# Calculate the population home range
+MEAN_UD <- mean(AKDES_UD, weights=NULL, sample=TRUE)
+plot(locs_UD, MEAN_UD)
 
+saveRDS(MEAN_UD, file = file.path(base_dir, "PKDES.rds"))
 
+# Extract home range areas for each tag
+AREAS_UD_95 <- lapply(AKDES_UD,summary, level=0.95, level.UD=0.95, units=FALSE) # extract 95% areas
+AREAS_UD_50 <- lapply(AKDES_UD,summary, level=0.95, level.UD=0.5, units=FALSE) # extract 50% areas
 
+###### Compare home range areas to the sampling duration, number of points and number of days
+# Manually check for a plateau
 
-## Check locations on index 88 and possibly remove
+# Initialize an empty data frame
+result_df <- data.frame(mean_UD_95=numeric(), mean_UD_50=numeric(), DOF_area=numeric(), DOF_bandwidth=numeric(), name=character(), 
+                        sampling_period=numeric(), days_with_detections=integer(), 
+                        number_detection=integer(), stringsAsFactors=FALSE)
 
-summary(FITS[[i]])
-
-AREAS <- lapply(AKDES_filtered,summary)
-
-AREAS[[1]]$CI
-
-for(i in 1:length(FITS)){
-  print(i)
-  print(summary(FITS[[i]])$name)
+# Loop through the AREAS_UD_95 list
+for (i in seq_along(AREAS_UD_95)) {
+  mean_UD_95_value_ha <- AREAS_UD_95[[i]]$CI[2]/10000 # Dividing by 10000 converts to hectares
+  mean_UD_50_value_ha <- AREAS_UD_50[[i]]$CI[2]/10000 # Dividing by 10000 converts to hectares
+  DOF_area_value <- AREAS_UD_95[[i]]$DOF[1]
+  DOF_bandwidth_value <- AREAS_UD_95[[i]]$DOF[2]
+  name_value <- names(locs_UD[i])
+  
+  # Calculate sampling period in days
+  timestamps <- locs_UD[[i]]$timestamp
+  sampling_period <- max(timestamps) - min(timestamps)
+  
+  # Calculate the unique number of days
+  days_with_detections <- length(unique(as.Date(timestamps)))
+  
+  # Calculate the number of detections
+  number_detection <- nrow(locs_UD[[i]])
+  
+  # Combine these values into a new row
+  new_row <- data.frame(mean_UD_95_ha=mean_UD_95_value_ha, mean_UD_50_ha=mean_UD_50_value_ha, DOF_area=DOF_area_value, 
+                        DOF_bandwidth=DOF_bandwidth_value, name=name_value, sampling_period=sampling_period, 
+                        days_with_detections=days_with_detections, 
+                        number_detection=number_detection, stringsAsFactors=FALSE)
+  
+  # Append this row to the data frame
+  result_df <- rbind(result_df, new_row)
 }
 
-for(i in 1:length(AKDES)){
-  print(i)
-  sample_size <- nrow(locs[[i]])
-  ci <- summary(AKDES[[i]])$CI
+# Plot the results to look for plateau
+
+# For effective sample size
+median_UD_95_ha <- median(result_df$mean_UD_95_ha, na.rm = TRUE)
+sample_size_plot <- ggplot(result_df, aes(x = DOF_area, y = mean_UD_95_ha)) +
+  geom_point() +
+  geom_hline(yintercept = median_UD_95_ha, linetype = "dashed", color = "blue") +  # Add dashed mean line
+  scale_y_log10() +
+  theme_bw() +
+  labs(x = "Effective sample size (DOF)", y = "95% home range (hectares)")
+plot(sample_size_plot)
+
+ggsave("figures/sample_size_plot_20231225.png", sample_size_plot, units = 'cm', width = 16, height = 10, dpi = 300)
+
+# Export home range data as an excel
+write.xlsx(result_df, file.path(base_dir, "home_range_data_20231225.xlsx"))
+
+# Use a ctmm meta function to get the average 95 and 50% home ranges
+AKDES_UD_95_meta <- meta(AKDES_UD, verbose=TRUE, sort=FALSE, level=0.95, level.UD=0.95,
+                      mean=TRUE, plot=FALSE)
+print(AKDES_UD_meta)
+
+AKDES_UD_50_meta <- meta(AKDES_UD, verbose=TRUE, sort=FALSE, level=0.95, level.UD=0.95,
+                         mean=TRUE, plot=FALSE)
+print(AKDES_UD_50_meta)
+
+# Write to Excel
+write.xlsx(AKDES_UD_95_meta, file = "AKDES_UD_95_meta_20231225.xlsx")
+write.xlsx(AKDES_UD_50_meta, file = "AKDES_UD_50_meta_20231225.xlsx")
+
+### Export individual an population home ranges as geotiff and esri shape
+# Export individual home ranges
+for (i in seq_along(AKDES_UD)) {
+  name <- names(locs_UD[i])
+  
+  # ESRI Shapefile 95%
+  filename_ud95_shp <- file.path(base_dir, paste0("GIS_files/", "UD_95_vector/", name))
+  dir.create(filename_ud95_shp, recursive = TRUE)
+  writeVector(AKDES_UD[[i]], filename=filename_ud95_shp, filetype="ESRI Shapefile", convex=FALSE, level.UD=0.95, level=0.95)
+  
+  # Geotiff 95%
+  filename_ud95_geotiff <- file.path(base_dir, paste0("GIS_files/", "UD_95_raster/", name))
+  dir.create(filename_ud95_geotiff, recursive = TRUE)
+  writeRaster(AKDES_UD[[i]], filename=filename_ud95_geotiff, format="GTiff", level.UD=0.95, level=0.95)
+  
+  # ESRI Shapefile 50%
+  filename_ud50_shp <- file.path(base_dir, paste0("GIS_files/", "UD_50_vector/", name))
+  dir.create(filename_ud50_shp, recursive = TRUE)
+  writeVector(AKDES_UD[[i]], filename=filename_ud50_shp, filetype="ESRI Shapefile", convex=FALSE, level.UD=0.50, level=0.95)
+  
+  # Geotiff 50%
+  filename_ud50_geotiff <- file.path(base_dir, paste0("GIS_files/", "UD_50_raster/", name))
+  dir.create(filename_ud50_geotiff, recursive = TRUE)
+  writeRaster(AKDES_UD[[i]], filename=filename_ud50_geotiff, format="GTiff", level.UD=0.50, level=0.95)
 }
 
+#Export population home range
+writeVector(MEAN_UD, filename="ctmm_output/GIS_files/population_UD_95_vector", filetype="ESRI Shapefile", convex=FALSE, level.UD=0.50, level=0.95)
+writeRaster(MEAN_UD, filename="ctmm_output/GIS_files/population_UD_95_raster/", format="GTiff", level.UD=0.50, level=0.95)
 
-
-i=12
-summary(AKDES[[i]])$CI
-summary(AKDES[[i]])$CI[1, "est"]
-
-
-
-# Remove troublesome AKDES from the AKDES list
-AKDES[[16]] <- NULL
-AKDES[[40]] <- NULL
-AKDES[[79]] <- NULL
-AKDES[[81]] <- NULL
-AKDES[[110]] <- NULL
-AKDES[[174]] <- NULL
-
-
-
-# Identify elements of class 'ctmm'
-is_not_ctmm <- sapply(AKDES, function(x) class(x) != "ctmm")
-
-# Filter out elements of class 'ctmm'
-AKDES_filtered <- AKDES[is_not_ctmm]
-locs_filtered <- locs[is_not_ctmm]
-
-COL <- color(AKDES_filtered, by = 'individual')
-
-plot(AKDES_filtered, col.DF = COL, col.level = COL, col.grid = NA, level = NA)
-
-### Need to make sure that ctmm is the latest version
-# cluster analysis
-cluster(AKDES, sort = TRUE)
-
-# Mean home ranges, sorted largest to smallest individual
-meta(AKDES_filtered, col = c(COL, "black"), verbose = TRUE, sort = FALSE)
-
-# funnel plot to check for sampling bias
-funnel(AKDES_filtered,locs_filtered, level=0.5)
-
-overlap(AKDES)
-
-# Compare groups
-### Example code, but adjust for season and maybe sex
-meta(list(south = AKDES[1:3],
-          north = AKDES[4:6]),
-     plot = TRUE,
-     verbose = TRUE)
-
-## Population models/range (all of the tags together)
-MEAN.FITS <- mean(FITS)
-summary(MEAN.FITS)
-
-## Mean population range
-MEAN <- mean(AKDES_filtered)
-plot(locs_filtered, MEAN)
-
-## Better (and newer) function is to use the population KDE function
-PKDE <- pkde(locs_filtered, AKDES_filtered)
-
-summary(PKDE)$CI
-
-## See if this can be exported as a shapefile too
-
-
-
-# extract 95% areas
-AREAS <- lapply(AKDES,summary)
-
-# log transform for further meta-analysis
-LOG <- Log(AREAS)
-
-
-
-### Export home ranges
-
-
-
-# Initialize an empty data frame for home range data
-home_range_data <- data.frame()
-
-# Fit movement models
-BOOTS <- FITS <- AKDES <- list()
-GUESS <- list()
-for(i in 1:length(locs)) {
-  tryCatch({
-    print(i)
-    # Attempt to fit the model
-    GUESS[[i]] <- ctmm.guess(locs[[i]], CTMM=ctmm(error=TRUE), interactive = FALSE)
-    FITS[[i]] <- ctmm.select(locs[[i]], GUESS, method = 'pHREML')
-    #BOOTS[[i]] <- ctmm.boot(locs[[i]], FITS[[i]], trace = 2)
-    
-    # Record success
-    home_range_data <- rbind(home_range_data, data.frame(Name = names(locs[i]), Rows = nrow(locs[[i]]), FitSuccess = TRUE))
-  }, error = function(e) {
-    # Record failure
-    home_range_data <- rbind(home_range_data, data.frame(Name = names(locs[i]), Rows = nrow(locs[[i]]), FitSuccess = FALSE))
-  })
-}
-# calculate AKDES on a consistent grid
-AKDES <- akde(locs,FITS,weights=TRUE)
-
-saveRDS(AKDES, file = file.path(base_dir, "AKDES.rds"))
-
-names(locs[i])
-
-## Restore from a saved RDS file
-#AKDES <- readRDS(file.path(base_dir, "AKDES.rds"))
-
-
-
-
-
-
-
-
-
-# extract 95% areas
-AREAS <- lapply(test_list,summary(level=0.95,level.UD=0.95))
-
-for(i in 1:length(test_list))
-{
-  print(summary(test_list[[i]], level=0.95,level.UD=0.95))
-}
-
-i = 1
-summary(AKDES[1])
-
-# Loop through each ID
-for (i in 1:num_ids) {
-  id <- names(locs)[i]
-  single_tag <- locs[[i]]
-
-  #GUESS <- ctmm.guess(single_tag,CTMM=ctmm(error=TRUE),interactive=FALSE) # automated model guess
-  GUESS <- ctmm.guess(single_tag,interactive=FALSE) # model without error for testing
-
-  FIT1_pHREML <- ctmm.select(single_tag, GUESS, method = 'pHREML')
-
-  BOOT <- ctmm.boot(single_tag, FIT1_pHREML, trace = 2)
-
-  UD1w_pHREML_boot <- akde(single_tag, BOOT, weights=TRUE, grid=list(dr=10, align.to.origin=T))
-  
-  # Extract information
-  sample_size <- nrow(single_tag)
-  
-  ## For 95% home range area
-  print(summary(UD1w_pHREML_boot, level=0.95,level.UD=0.95))
-  area_km2_0.95_min <- summary(UD1w_pHREML_boot, level=0.95,level.UD=0.95)$CI[1]
-  area_km2_0.95_mean <- summary(UD1w_pHREML_boot, level=0.95,level.UD=0.95)$CI[2]
-  area_km2_0.95_max <- summary(UD1w_pHREML_boot, level=0.95,level.UD=0.95)$CI[3]
-  dof_area_0.95 <- summary(UD1w_pHREML_boot, level=0.95,level.UD=0.95)$DOF["area"]
-  dof_bandwidth_0.95 <- summary(UD1w_pHREML_boot, level=0.95,level.UD=0.95)$DOF["bandwidth"]
-  
-  ## For 50% home range area
-  print(summary(UD1w_pHREML_boot, level=0.95,level.UD=0.5))
-  area_km2_0.5_min <- summary(UD1w_pHREML_boot, level=0.95,level.UD=0.5)$CI[1]
-  area_km2_0.5_mean <- summary(UD1w_pHREML_boot, level=0.95,level.UD=0.5)$CI[2]
-  area_km2_0.5_max <- summary(UD1w_pHREML_boot, level=0.95,level.UD=0.5)$CI[3]
-  dof_area_0.5 <- summary(UD1w_pHREML_boot, level=0.95,level.UD=0.5)$DOF["area"]
-  dof_bandwidth_0.5 <- summary(UD1w_pHREML_boot, level=0.95,level.UD=0.5)$DOF["bandwidth"]
-
-  # For each ID, calculate and append home range data to the data frame
-  home_range_data <- rbind(home_range_data, data.frame(
-    id = id,
-    sample_size = sample_size,
-    area_km2_0_95_min = area_km2_0.95_min,
-    area_km2_0_95_mean = area_km2_0.95_mean,
-    area_km2_0_95_max = area_km2_0.95_max,
-    dof_area_0_95 = dof_area_0.95,
-    dof_bandwidth_0_95 = dof_bandwidth_0.95,
-    area_km2_0_5_min = area_km2_0.5_min,
-    area_km2_0_5_mean = area_km2_0.5_mean,
-    area_km2_0_5_max = area_km2_0.5_max,
-    dof_area_0_5 = dof_area_0.5,
-    dof_bandwidth_0_5 = dof_bandwidth_0.5
-  ))
-
-  # Export 95% and 50% home ranges and points for the current ID
-  # Write UD 95 and UD 50 to ESRI shapefile
-  filename_ud95 <- file.path(base_dir, paste0(id, "_UD_95"))
-  filename_ud50 <- file.path(base_dir, paste0(id, "_UD_50"))
-  filename_points <- file.path(base_dir, paste0(id, "_locations"))
-  
-  writeVector(UD1w_pHREML_boot, filename_ud95, filetype="ESRI Shapefile", convex=FALSE, level.UD=0.95, level=0.95)
-  writeRaster(UD1w_pHREML_boot,filename_ud95,format="GTiff",DF="CDF", level.UD=0.95, level=0.95)
-  writeRaster(UD1w_pHREML_boot,filename_ud95,format="raster",DF="CDF", level.UD=0.95, level=0.95)
-  writeVector(UD1w_pHREML_boot, filename_ud50, filetype="ESRI Shapefile", convex=FALSE, level.UD=0.5, level=0.95)
-  writeRaster(UD1w_pHREML_boot,filename_ud50,format="GTiff",DF="CDF", level.UD=0.5, level=0.95)
-  writeRaster(UD1w_pHREML_boot,filename_ud50,format="raster",DF="CDF", level.UD=0.5, level=0.95)
-  
-  # Write points to a shapefile
-  writeVector(single_tag, filename_points, filetype="ESRI Shapefile")
-  
-  write.xlsx(home_range_data, file.path(base_dir, paste0(id, "_home_range_data.xlsx")))
-}
-
-write.xlsx(home_range_data, file.path(base_dir, "home_range_data_finished.xlsx"))
