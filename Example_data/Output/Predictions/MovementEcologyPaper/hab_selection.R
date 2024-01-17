@@ -62,6 +62,18 @@ hist(filt_data$BTF_presence, main = "BTF presence",
 contingency_table <- table(filt_data$RE, filt_data$BTF_presence)
 print(contingency_table)
 
+
+###### Descriptive statistics for the report
+## Mean, min, max and median, distance to permanent water
+# Get prseence data
+pres_data <- subset(filt_data, Method != "Random")
+
+# Calc summary stats
+mean(pres_data$PermanentDistance, na.rm = TRUE)
+min(pres_data$PermanentDistance, na.rm = TRUE)
+max(pres_data$PermanentDistance, na.rm = TRUE)
+median(pres_data$PermanentDistance, na.rm = TRUE)
+
 ### model selection
 # Note: after trying a glm, there was an issue with model convergence due to separation of variance among RE's.
 # Model has been updated to use a PENALIZED MAXIMUM LIKELIHOOD ESTIMATION method (Firth's)
