@@ -7,7 +7,7 @@ rm(list = ls())
 pacman::p_load(dplyr, openxlsx, readxl, ggplot2, activity, lubridate, hms, DHARMa, sjPlot, glmmTMB, broom, gridExtra, MuMIn)
 
 # Import the xlsx file for the individual locations, excluding ART data
-indiv_locs_ex_art <- read_excel("C:/Users/s5236256/Documents/GitHub/ml4rt/Example_data/Output/Predictions/MovementEcologyPaper/BTF_Individual_Locations_20230718.xlsx")
+indiv_locs_ex_art <- read_excel("BTF_Individual_Locations_20230718.xlsx")
 
 # Filter dataframe to include only records where the activity status was known
 activity_records <- indiv_locs_ex_art %>%
@@ -171,14 +171,14 @@ groupwiseCMH(contingency_table,
 activity_Time_of_day <- activity_records %>%
   mutate(
     Time_of_day = case_when(
-      clock_solar_corrected >= 19 | clock_solar_corrected < 6 ~ "night",
-      clock_solar_corrected >= 6 & clock_solar_corrected < 7 ~ "twilight",
-      clock_solar_corrected >= 7 & clock_solar_corrected < 9 ~ "early morning",
-      clock_solar_corrected >= 9 & clock_solar_corrected < 11 ~ "late morning",
-      clock_solar_corrected >= 11 & clock_solar_corrected < 14 ~ "midday",
-      clock_solar_corrected >= 14 & clock_solar_corrected < 16 ~ "early afternoon",
-      clock_solar_corrected >= 16 & clock_solar_corrected < 18 ~ "late afternoon",
-      clock_solar_corrected >= 18 & clock_solar_corrected < 19 ~ "twilight",
+      clock_solar_corrected >= 19 | clock_solar_corrected < 6 ~ "Night",
+      clock_solar_corrected >= 6 & clock_solar_corrected < 7 ~ "Twilight",
+      clock_solar_corrected >= 7 & clock_solar_corrected < 9 ~ "Early morning",
+      clock_solar_corrected >= 9 & clock_solar_corrected < 11 ~ "Late morning",
+      clock_solar_corrected >= 11 & clock_solar_corrected < 14 ~ "Midday",
+      clock_solar_corrected >= 14 & clock_solar_corrected < 16 ~ "Early afternoon",
+      clock_solar_corrected >= 16 & clock_solar_corrected < 18 ~ "Late afternoon",
+      clock_solar_corrected >= 18 & clock_solar_corrected < 19 ~ "Twilight",
       TRUE ~ as.character(NA)
     )
   ) %>%
@@ -191,7 +191,7 @@ activity_Time_of_day <- activity_records %>%
 # Create a complete set of combinations to fill in zeros for the model
 all_combinations <- expand.grid(
   Season = unique(activity_records$Season),
-  Time_of_day = c("early morning", "late morning", "midday", "early afternoon", "late afternoon"),
+  Time_of_day = c("Early morning", "Late morning", "Midday", "Early afternoon", "Late afternoon"),
   activity = unique(activity_records$activity)
 )
 
@@ -202,7 +202,7 @@ expanded_activity$total_count[is.na(expanded_activity$total_count)] <- 0
 expanded_activity$proportion[is.na(expanded_activity$proportion)] <- 0
 
 expanded_activity <- expanded_activity %>%
-  mutate(Time_of_day = factor(Time_of_day, levels = c("early morning", "late morning", "midday", "early afternoon", "late afternoon"))) %>%
+  mutate(Time_of_day = factor(Time_of_day, levels = c("Early morning", "Late morning", "Midday", "Early afternoon", "Late afternoon"))) %>%
   group_by(activity) %>%
   mutate(
     mean_proportion = mean(proportion, na.rm = TRUE),
@@ -238,6 +238,24 @@ r.squaredGLMM(m1)
 
 # Export the dataframe used for the stats
 #write.xlsx(expanded_activity, file = "activity_summary_20240103.xlsx", rowNames=TRUE)
+
+# Plots of different components of the model
+theme_set(theme_bw())
+
+plot_activity_time <- plot_model(m1,
+                                 type = "eff",
+                                 terms = c("Time_of_day", "activity"),
+                                 show.legend = TRUE,
+                                 axis.title = c("Time of day", "Proportion of observations"),
+                                 title = ""         
+) + 
+  theme(legend.position = "top") +  # Move legend to top
+  labs(color = "Activity")   
+
+plot(plot_activity_time)
+
+ggsave("figures/diel_activity_glm_20240119.png", plot = plot_activity_time, units = 'cm', width = 16, height = 12, dpi = 600)
+
 
 
 

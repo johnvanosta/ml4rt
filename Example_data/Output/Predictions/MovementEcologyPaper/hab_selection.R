@@ -32,7 +32,7 @@ filt_data <- filt_data %>%
       RE %in% c("10.7.4", "10.7.5") ~ "E. persistens W.",
       RE %in% c("10.3.12", "10.5.2") ~ "Corymbia spp. W.",
       RE == "10.5.1" ~ "E. similis W.",
-      RE == "10.7.7" ~ "M. tamariscina woodland",
+      RE == "10.7.7" ~ "M. tamariscina W.",
       TRUE ~ RE
     ),
     PermanentDistance_km = PermanentDistance / 1000,
@@ -100,8 +100,7 @@ model_summary <- capture.output(summary(best_model))
 ### Set theme for the plots, theme_bw is a good base one for scientific papers
 theme_set(theme_bw())
 
-
-odds_plot <- plot_model(best_model, sort.est = TRUE, vline.color = "darkgrey", show.p = TRUE, show.values = TRUE, 
+odds_plot <- plot_model(best_model, sort.est = TRUE, vline.color = "black", show.p = TRUE, show.values = TRUE, 
             value.offset = 0.4, value.size = 4, title="")
 
 odds_plot <- odds_plot + 
@@ -115,7 +114,7 @@ odds_plot <- odds_plot +
                      'REE. melanophloia W.' = 'E. melanophloia W.',
                      'REE. persistens W.' = 'E. persistens W.',
                      'REE. similis W.' = 'E. similis W.',
-                     'REM. tamariscina woodland' = 'M. tamariscina woodland',
+                     'REM. tamariscina W.' = 'M. tamariscina W.',
                      'RENon-remnant' = 'Non-remnant',
                      'PermanentDistance_km' = 'Permanent Distance (km)',
                      'TrackDistance_km' = 'Track Distance (km)',
@@ -128,25 +127,22 @@ odds_plot <- odds_plot +
                      'REE. melanophloia W.:SeasonWet' = 'E. melanophloia W. x Wet Season',
                      'REE. persistens W.:SeasonWet' = 'E. persistens W. x Wet Season',
                      'REE. similis W.:SeasonWet' = 'E. similis W. x Wet Season',
-                     'REM. tamariscina woodland:SeasonWet' = 'M. tamariscina woodland x Wet Season',
+                     'REM. tamariscina W.:SeasonWet' = 'M. tamariscina W. x Wet Season',
                      'RENon-remnant:SeasonWet' = 'Non-remnant x Wet Season'
                    ))
                    
 plot(odds_plot)
 
 # Save the plot
-ggsave("figures/odds_plot_20240111.png", plot = odds_plot, unit = 'cm', width = 16, height = 18, dpi = 300)
+ggsave("figures/odds_plot_20240119.png", plot = odds_plot, unit = 'cm', width = 16, height = 18, dpi = 300)
 
-
-
-
-
+# Plots of different components of the model
 plot_RE <- plot_model(best_model,
                    type = "eff",
                    terms = c("RE"),
                    show.legend = FALSE,
                    title = ""         
-)
+) + coord_flip()
 
 plot(plot_RE)
 
@@ -172,58 +168,7 @@ plot(plot_track_dist)
 
 
 
-# Define a custom function to determine if the 95% CI overlaps with zero
-is_significant <- function(model, var) {
-  ci <- confint(model, var)
-  return(ci[1] > 0 | ci[2] < 0)
-}
 
-# Get model estimates and their confidence intervals
-estimates <- summary(best_model)$coefficients
-variables <- rownames(estimates)
-
-# Determine which variables are significant
-significant_vars <- sapply(variables, function(var) is_significant(best_model, var))
-
-# Create a customized plot
-plot_model(best_model, sort.est = TRUE, vline.color = "black", 
-           geom.colors = ifelse(significant_vars, "black", "grey"), 
-           geom.size = ifelse(significant_vars, 1.5, 0.5))
-
-
-
-
-
-
-###### Grass cover
-plot_grass_cover <- plot_model(best_model,
-                               type = "eff",
-                               terms = c("Grass_cover"),
-                               show.legend = FALSE
-)
-
-yplot_grass_cover <- plot_grass_cover +
-  labs(title = NULL) +
-  ylab("Nest presence") +
-  xlab("Grass cover (%)") +
-  labs(tag = "(B)")
-
-plot(plot_grass_cover)
-
-##### Canopy height
-plot_canopy_height <- plot_model(best_model,
-                               type = "eff",
-                               terms = c("Canopy_height"),
-                               show.legend = FALSE
-)
-
-plot_canopy_height <- plot_canopy_height +
-  labs(title = NULL) +
-  ylab("Nest presence") +
-  xlab("Canopy height (%)") +
-  labs(tag = "(C)")
-
-plot(plot_canopy_height)
 
 # Combine the plots into a grid
 combined_plot <- grid.arrange(plot_shrub_cover, plot_grass_cover, plot_canopy_height, ncol = 1)

@@ -1,11 +1,11 @@
 rm(list = ls())
 
-pacman::p_load(dplyr, readxl, ggplot2, DHARMa, sjPlot, glmmTMB, gridExtra, lubridate, GGally, MuMIn)
+pacman::p_load(dplyr, readxl, ggplot2, DHARMa, sjPlot, glmmTMB, gridExtra, lubridate, GGally, MuMIn, lme4)
 
 setwd("~/GitHub/ml4rt/Example_data/Output/Predictions/MovementEcologyPaper")
 
 # Load the data
-UD_data <- read_excel("Supplementary_2_home_range_data.xlsx", sheet = 'home_range_data')
+UD_data <- read_excel("Supporting_information_Table_S1.xlsx", sheet = 'home_range_data')
 
 colnames(UD_data)
 
@@ -15,6 +15,20 @@ site_weather_data <- read_excel("weather_data/Weather_data_compiled_20230919.xls
 # Import GTRE data
 gtre_data <- read_excel("GIS_Output/UD95_gtre_per_tag.xlsx")
 
+# Remove rows where ctmm_utilisation_distribution_fitted equals 'No'
+UD_data <- UD_data %>% filter(ctmm_utilisation_distribution_fitted != "No")
+
+# Convert specified columns to numeric
+numeric_cols <- c("sampling_period", "number_detection", "days_with_detections", 
+                  "mean_UD_95_ha", "mean_UD_50_ha", "DOF_area", "MCP_ha")
+
+for (col in numeric_cols) {
+  # Convert factors to characters first to avoid conversion issues
+  if (is.factor(UD_data[[col]])) {
+    UD_data[[col]] <- as.character(UD_data[[col]])
+  }
+  UD_data[[col]] <- as.numeric(UD_data[[col]])
+}
 
 #### Calculate summary statistics
 # Define the list of columns to analyze
@@ -200,7 +214,7 @@ selected_data <- UD_data_lm[, c("Total_rain_tag_period",
                                 "mean_UD_95_ha")]
 
 # Creating the ggpairs plot
-ggpairs(selected_data)
+#ggpairs(selected_data)
 
 # Plot 95% UD by prop_Emelanophloia
 ggplot(UD_data_lm, aes(x = prop_Emelanophloia, y = mean_UD_95_ha)) + 
@@ -217,7 +231,7 @@ ggplot(UD_data_lm, aes(x = prop_Emelanophloia, y = mean_UD_95_ha)) +
 # Additional data cleaning step/s
 
 # Exclude outliers of UD_95_ha
-#UD_data_lm <- subset(UD_data_lm, UD_95_ha >= quantile(UD_95_ha, 0.25) - 1.5 * IQR(UD_95_ha) & UD_95_ha <= quantile(UD_95_ha, 0.75) + 1.5 * IQR(UD_95_ha))
+UD_data_lm <- subset(UD_data_lm, mean_UD_95_ha >= quantile(mean_UD_95_ha, 0.25) - 1.5 * IQR(mean_UD_95_ha) & mean_UD_95_ha <= quantile(mean_UD_95_ha, 0.75) + 1.5 * IQR(mean_UD_95_ha))
 
 # Assessing difference in home ranges among seasons
 # Exploring models
@@ -244,7 +258,9 @@ m_all_no_interac <- glmmTMB(mean_UD_95_ha ~ Total_rain_tag_period +
                  data = UD_data_lm, family = Gamma(link = "log"))
 summary(m_all_no_interac)
 
-m_season_cat <- glmmTMB(UD_95_ha ~ Season, data = UD_data_lm, family = Gamma(link = "log"))
+m_season_cat <- glmmTMB(mean_UD_95_ha ~ Season +
+                          (1|Site),
+                          data = UD_data_lm, family = Gamma(link = "log"))
 
 summary(m_season_cat)
 
@@ -262,7 +278,7 @@ summary(m_rain)
 model.sel(m_max, m_all_no_interac, m_season_cat, m_temp, m_rain)
 
 # Run stats and plots on the best model
-best_model <- m_all_no_interac
+best_model <- m_season_cat
 
 simulated_res <- simulateResiduals(fittedModel = best_model)
 plot(simulated_res)
@@ -273,4 +289,6 @@ writeLines(model_summary, "figures/home_range_model_202401114.txt")
 
 
 nrow(UD_data_lm)
-r.squaredGLMM(m_all_no_interac)
+r.squaredGLMM(best_model)
+
+
