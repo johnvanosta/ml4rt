@@ -91,7 +91,7 @@ locs4ctmm <- concatenated_df %>%
 locs4ctmm <- locs4ctmm %>%
   mutate(UERE = if_else(Method == "ART", 209.1, 20))
 
-write.xlsx(locs4ctmm, "ctmm_input/ctmm_input_20240107_with_lat_long.xlsx")
+#write.xlsx(locs4ctmm, "ctmm_input/ctmm_input_20240107_with_lat_long.xlsx")
 
 ############## Summary Stats #######################
 
@@ -104,7 +104,7 @@ cat("Mean value:", mean(locs4ctmm_manual_screen %>% group_by(ID) %>% summarise(C
 cat("Minimum value:", min(locs4ctmm_manual_screen %>% group_by(ID) %>% summarise(Count = n()) %>% pull(Count)), "\n")
 cat("Maximum value:", max(locs4ctmm_manual_screen %>% group_by(ID) %>% summarise(Count = n()) %>% pull(Count)), "\n")
 cat("Median value:", median(locs4ctmm_manual_screen %>% group_by(ID) %>% summarise(Count = n()) %>% pull(Count)), "\n")
-
+cat("SD value:", sd(locs4ctmm_manual_screen %>% group_by(ID) %>% summarise(Count = n()) %>% pull(Count)), "\n")
 
 ### Summary of the number of detections (unfiltered per bird)
 # Concatenate predictions and indiv_locs_ex_art
@@ -154,7 +154,8 @@ radio_transect_stats <- radio_transect_data %>%
     Mean = mean(Count),
     Min = min(Count),
     Max = max(Count),
-    Median = median(Count)
+    Median = median(Count),
+    sd = sd(Count)
   )
 
 print("Stats for Radio tracking and 1km transect:")
@@ -178,7 +179,8 @@ art_stats <- art_data %>%
     Mean = mean(Count),
     Min = min(Count),
     Max = max(Count),
-    Median = median(Count)
+    Median = median(Count),
+    sd = sd(Count)
   )
 
 print("Stats for ART method:")

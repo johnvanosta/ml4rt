@@ -231,7 +231,7 @@ ggplot(UD_data_lm, aes(x = prop_Emelanophloia, y = mean_UD_95_ha)) +
 # Additional data cleaning step/s
 
 # Exclude outliers of UD_95_ha
-UD_data_lm <- subset(UD_data_lm, mean_UD_95_ha >= quantile(mean_UD_95_ha, 0.25) - 1.5 * IQR(mean_UD_95_ha) & mean_UD_95_ha <= quantile(mean_UD_95_ha, 0.75) + 1.5 * IQR(mean_UD_95_ha))
+#UD_data_lm <- subset(UD_data_lm, mean_UD_95_ha >= quantile(mean_UD_95_ha, 0.25) - 1.5 * IQR(mean_UD_95_ha) & mean_UD_95_ha <= quantile(mean_UD_95_ha, 0.75) + 1.5 * IQR(mean_UD_95_ha))
 
 # Assessing difference in home ranges among seasons
 # Exploring models
@@ -291,4 +291,8 @@ writeLines(model_summary, "figures/home_range_model_202401114.txt")
 nrow(UD_data_lm)
 r.squaredGLMM(best_model)
 
+# Calculate 95% Confidence Intervals
+CI <- confint(m_season_cat)
 
+# Print the Confidence Intervals
+print(CI)

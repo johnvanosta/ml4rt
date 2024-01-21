@@ -68,11 +68,25 @@ print(contingency_table)
 # Get prseence data
 pres_data <- subset(filt_data, Method != "Random")
 
-# Calc summary stats
-mean(pres_data$PermanentDistance, na.rm = TRUE)
-min(pres_data$PermanentDistance, na.rm = TRUE)
-max(pres_data$PermanentDistance, na.rm = TRUE)
-median(pres_data$PermanentDistance, na.rm = TRUE)
+# Calc summary stats for distance to permanent water
+mean_value <- mean(pres_data$PermanentDistance, na.rm = TRUE)
+min_value <- min(pres_data$PermanentDistance, na.rm = TRUE)
+max_value <- max(pres_data$PermanentDistance, na.rm = TRUE)
+median_value <- median(pres_data$PermanentDistance, na.rm = TRUE)
+std_dev <- sd(pres_data$PermanentDistance, na.rm = TRUE)
+n <- sum(!is.na(pres_data$PermanentDistance))
+std_error <- std_dev / sqrt(n)
+
+summary_stats <- data.frame(
+  Mean = mean_value,
+  Min = min_value,
+  Max = max_value,
+  Median = median_value,
+  StandardDeviation = std_dev,
+  StandardError = std_error
+)
+
+print(summary_stats)
 
 ### model selection
 # Note: after trying a glm, there was an issue with model convergence due to separation of variance among RE's.
@@ -165,6 +179,23 @@ plot_track_dist <- plot_model(best_model,
 plot(plot_track_dist)
 
 
+
+
+
+### Calculate odds ratios for in-text of paper
+# Extract coefficients directly from the model
+coef_m3 <- coef(m3)
+
+# Calculate Odds Ratios
+odds_ratios <- exp(coef(m3))
+
+# Calculate 95% Confidence Intervals using confint function from logistf
+CI <- exp(confint(m3))
+
+# Bind the results together
+results <- cbind(OddsRatio = odds_ratios, CI_lower = CI[, 1], CI_upper = CI[, 2])
+
+print(results)
 
 
 

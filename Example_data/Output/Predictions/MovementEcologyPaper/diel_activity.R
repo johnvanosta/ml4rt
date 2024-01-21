@@ -134,39 +134,6 @@ cmh_test_result <- mantelhaen.test(contingency_table)
 # Output the result
 print(cmh_test_result)
 
-# Post hoc analysis of the cmh test result
-# Difference between the wet and dry season
-groupwiseCMH(contingency_table,
-             group   = 1,
-             fisher  = TRUE,
-             gtest   = FALSE,
-             chisq   = FALSE,
-             method  = "bonferroni",
-             correct = "none",
-             digits  = 3,
-             simulate.p.value=TRUE)
-
-# Difference between the activities
-groupwiseCMH(contingency_table,
-             group   = 3,
-             fisher  = TRUE,
-             gtest   = FALSE,
-             chisq   = FALSE,
-             method  = "bonferroni",
-             correct = "none",
-             digits  = 3,
-             simulate.p.value=TRUE)
-
-# Difference among hours
-groupwiseCMH(contingency_table,
-             group   = 2,
-             fisher  = FALSE,
-             gtest   = TRUE,
-             chisq   = FALSE,
-             method  = "bonferroni",
-             correct = "none",
-             digits  = 3)
-
 #### Looking at seasonal difference of activities only
 activity_Time_of_day <- activity_records %>%
   mutate(
@@ -232,6 +199,12 @@ estimates <- tidy(m1, conf.int = TRUE)
 
 nrow(expanded_activity)
 r.squaredGLMM(m1)
+
+# Calculate 95% Confidence Intervals
+CI <- confint(m1)
+
+# Print the Confidence Intervals
+print(CI)
 
 ## glm cheat sheet: https://www.usabart.nl/eval/cs-generalized%20linear%20mixed%20effects.pdf
 
