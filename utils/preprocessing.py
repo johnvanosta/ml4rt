@@ -1,12 +1,12 @@
 import numpy as np
 import pandas as pd
 
-#### Note to self: Remove 'Point_ID', 'Tag_type', 'Interval_seconds' prior to publishing
+#### Note to self: Remove 'Point_ID', 'Interval_seconds' prior to publishing
 
 def training_preprocess_sub(data_preprocessed):
     # group by datetime, tag, tower and antenna, compute mean power and std power, pivot to antennas
     data_preprocessed = (
-        data_preprocessed.groupby(['DateTime', 'TowerID', 'TagID', 'Antenna', 'Data_type', 'POINT_X', 'POINT_Y', 'Point_ID', 'Tag_type', 'Interval_seconds'])['Power']
+        data_preprocessed.groupby(['DateTime', 'TowerID', 'TagID', 'Antenna', 'Data_type', 'POINT_X', 'POINT_Y', 'Point_ID', 'Interval_seconds'])['Power']
         .agg(['mean', 'count', np.std])
         .reset_index()
     )
@@ -14,7 +14,7 @@ def training_preprocess_sub(data_preprocessed):
     # Pivot table with antennas as columns
     data_preprocessed = (
         data_preprocessed.pivot_table(
-            index=['DateTime', 'TowerID', 'TagID', 'Data_type', 'POINT_X', 'POINT_Y', 'Point_ID', 'Tag_type', 'Interval_seconds'],
+            index=['DateTime', 'TowerID', 'TagID', 'Data_type', 'POINT_X', 'POINT_Y', 'Point_ID', 'Interval_seconds'],
             columns='Antenna',
             values=['mean', 'count', 'std']
         )
@@ -41,40 +41,16 @@ def prediction_preprocess_sub(data_preprocessed):
     )
     return data_preprocessed
 
-## Backup of prediction_preprocess before change on 4/12/2023
-# def prediction_preprocess_sub(data_preprocessed):
-#     # group by datetime, tag, tower and antenna, compute mean power and std power, pivot to antennas
-#     data_preprocessed = (
-#         data_preprocessed.groupby(['DateTime', 'TowerID', 'TagID', 'Antenna', 'Point_ID', 'Tag_type', 'Interval_seconds'])['Power']
-#         .agg(['mean', 'count', np.std])
-#         .reset_index()
-#     )
-
-#     # Pivot table with antennas as columns
-#     data_preprocessed = (
-#         data_preprocessed.pivot_table(
-#             index=['DateTime', 'TowerID', 'TagID', 'Point_ID', 'Tag_type', 'Interval_seconds'],
-#             columns='Antenna',
-#             values=['mean', 'count', 'std']
-#         )
-#         .reset_index()
-#     )
-#     return data_preprocessed
-
 def preprocess(input_data, freq, routine):
     # make column with the datetime to nearest 'freq' value (e.g. 5min)
-    print("up to preprocess")
     data_preprocessed = input_data.assign(DateTime = input_data['DateAndTime'].dt.floor(freq=freq))
-    print("created DateTime")
     # Create a unique list of antennas
     antennas = data_preprocessed['Antenna'].unique()
 
     if routine == 'training':
         data_preprocessed = training_preprocess_sub(data_preprocessed)
     elif routine == 'prediction':
-        print("down routine prediction route")
         data_preprocessed = prediction_preprocess_sub(data_preprocessed)
-        print("prediction route subprocess complete")
     else:
         raise ValueError("Invalid value for 'routine'. Please specify either 'training' or 'prediction'.")
 
