@@ -7,10 +7,8 @@ pacman::p_load(readxl,openxlsx,dplyr,ggplot2, viridis, boot, glmmTMB, DHARMa, sj
 m1 <- read_excel("ml4rt_output/trained_models/m1/error_estimates.xlsx")
 m2 <- read_excel("ml4rt_output/trained_models/m2/error_estimates.xlsx")
 m3 <- read_excel("ml4rt_output/trained_models/m3/error_estimates.xlsx")
-m4 <- read_excel("ml4rt_output/trained_models/m4/error_estimates.xlsx")
-m5 <- read_excel("ml4rt_output/trained_models/m5/error_estimates_mech_w_biangulation.xlsx")
-m6 <- read_excel("ml4rt_output/trained_models/m6/error_estimates_mech_w_linear_regression.xlsx")
-
+m4 <- read_excel("ml4rt_output/trained_models/m4/error_estimates_mech_w_biangulation.xlsx")
+m5 <- read_excel("ml4rt_output/trained_models/m5/error_estimates_mech_w_linear_regression.xlsx")
 
 # Adding an identifier column to each dataframe
 m1$model <- "m1"
@@ -18,15 +16,14 @@ m2$model <- "m2"
 m3$model <- "m3"
 m4$model <- "m4"
 m5$model <- "m5"
-m6$model <- "m6"
 
 # Remove rows where 'error_m' is na or greater than 10000 for the biangulation method
-m5 <- m5 %>%
+m4 <- m4 %>%
   filter(!is.na(error_m)) %>%
   filter(error_m <= 10000)
 
 # Combining the dataframes
-combined_df <- bind_rows(m1, m2, m3, m4, m5, m6)
+combined_df <- bind_rows(m1, m2, m3, m4, m5)
 
 summary_df <- combined_df %>%
   group_by(model) %>%
@@ -131,13 +128,12 @@ ggplot(combined_df, aes(x = error_m)) +
 yl = "Positional error (m)"
 
 combined_df$method_name <- factor(combined_df$model,
-                            levels = rev(c("m1", "m2", "m3", "m4", "m5", "m6")),
-                            labels = rev(c("Method 1: ML with\nall training data", 
-                                       "Method 2: ML with\nradio tracked training data",
-                                       "Method 3: ML with\nsimulated training data", 
-                                       "Method 4: ML with\nmultiple tower groups",
-                                       "Method 5: Mechanistic\nwith biangulation", 
-                                       "Method 6: Mechanistic\nwith linear regression")))
+                            levels = rev(c("m1", "m2", "m3", "m4", "m5")),
+                            labels = rev(c("Fingerprinting with\ncombined training data", 
+                                       "Fingerprinting with\nradio tracked training data",
+                                       "Fingerprinting with\nsimulated training data", 
+                                       "Angulation with\nintersect", 
+                                       "Angulation with\ndistance")))
 
 model_glmm <- glmmTMB(error_m ~ method_name + (1 | Point_ID),
                          data = combined_df, family = nbinom2)
