@@ -37,56 +37,7 @@ print(summary_df)
 
 mean(combined_df$mean_distance_from_tower, na.rm = TRUE)
 
-# Create the violin plot of model error
-ggplot(combined_df, aes(x = model, y = error_m, fill = model)) +
-  geom_violin(trim = FALSE) +
-  geom_boxplot(width = 0.1, color = "grey", alpha = 0.2, position = position_dodge(width = 0.9)) +
-  scale_fill_viridis(discrete = TRUE, option = "D") +
-  scale_y_log10() +
-  labs(x = "Model", y = "Positional error (m)") +
-  theme_bw() +
-  theme(legend.position = "none")
-
-### Plot median with 95% confidence intervals (bootstrapped)
-# Function to calculate the median
-median_fun <- function(data, indices) {
-  d <- data[indices]  # allows bootstrapping to select sample
-  return(median(d))
-}
-
-model_stats <- combined_df %>%
-  group_by(model) %>%
-  do({
-    # Filter out NA values from 'error_m' within the pipeline
-    non_na_data <- na.omit(.$error_m)
-    
-    # Ensure there is enough data for calculations
-    if (length(non_na_data) > 1) {
-      boot_median <- boot(non_na_data, median_fun, R = 1000)
-      median_val <- median(non_na_data, na.rm = TRUE)
-      ci <- boot.ci(boot_median, type = "perc")$percent[4:5]
-      data.frame(model = first(.$model), median = median_val, ci_lower = ci[1], ci_upper = ci[2])
-    } else {
-      # Handle the case with insufficient data
-      data.frame(model = first(.$model), median = NA, ci_lower = NA, ci_upper = NA)
-    }
-  }) %>%
-  ungroup()
-
-# Create the plot
-model_plot <- ggplot(model_stats, aes(x = model, y = median)) +
-  geom_point(size = 4, color = "black") +
-  geom_errorbar(aes(ymin = ci_lower, ymax = ci_upper), width = 0.2) +
-  labs(x = "Model", y = "Median positional error (m)") +
-  theme_bw()
-
-plot(model_plot)
-
-# Save the plot as a PNG file
-#ggsave("paper_results/figures/model_comparison.png", model_plot, width = 14, height = 11, units = "cm", dpi = 600)
-
-
-######### glmm to test for causes of differences in model results
+######### glmm data preparation
 
 # Fill tower count, signal count and mean distance from tower for the mechanistic models using the data from the ML pipeline
 
@@ -111,7 +62,6 @@ combined_df <- combined_df %>%
   select(-starts_with("ref_")) # Remove reference columns
 
 # Get mean signal strength and tag interval
-
 variables_to_merge <- read_excel("paper_results/figures/mean_sig_strength_tag_intervals.xlsx", sheet = 'summary')
 
 # Joining variables_to_merge into combined_df based on "DateTime" and "TagID"
@@ -125,92 +75,52 @@ ggplot(combined_df, aes(x = error_m)) +
   labs(title = "Histogram of error_m", x = "error_m", y = "Count") +
   theme_minimal()
 
-### glmm to assess performance of the different models
-yl = "Positional error (m)"
-
+# Relabel methods
 combined_df$method_name <- factor(combined_df$model,
-                            levels = rev(c("m1", "m2", "m3", "m4", "m5")),
-                            labels = rev(c("Fingerprinting with\ncombined training data", 
-                                       "Fingerprinting with\nradio tracked training data",
-                                       "Fingerprinting with\nsimulated training data", 
-                                       "Angulation with\nintersect", 
-                                       "Angulation with\ndistance")))
-
-model_glmm <- glmmTMB(error_m ~ method_name + (1 | Point_ID),
-                         data = combined_df, family = Gamma(link = "log"))
-
-summary(model_glmm)
-
-simulationOutput <- simulateResiduals(fittedModel = model_glmm, plot = F)
-plot(simulationOutput)
-
-model_comparison_plt <- plot_model(model_glmm, type = "eff", terms = "method_name",
-                    dot.size = 1.5, line.size = 0.8, title = "",
-                    axis.title = c("", yl),
-                    colors = 'black', ci.lvl = 0.95) +
-  theme_bw() +
-  coord_flip()
-
-plot(model_comparison_plt)
-
-#ggsave("paper_results/Figures/model_comparison_20240128.png", plot = model_comparison_plt, width = 140, height = 80, units = "mm", dpi = 600)
-
-tidy_model <- broom.mixed::tidy(model_glmm, conf.int = TRUE) %>%
-  select(term, estimate, conf.low, conf.high, p.value)
-print(tidy_model)
-
-#write.xlsx(tidy_model, file = "paper_results/Figures/Model_glmm_comparison_20240128.xlsx")
-
-# Number of observations
-nrow(combined_df)
-
-# R-squared for GLMM
-performance::r2(model_glmm)
-
-### glmm for only model 1 to test factors affecting positional error
-# Create a dataframe only for m1
-m1_data <- combined_df %>%
-  filter(model == 'm1')
+                                  levels = rev(c("m1", "m2", "m3", "m4", "m5")),
+                                  labels = rev(c("Fingerprinting with\ncombined training data", 
+                                                 "Fingerprinting with\nradio tracked training data",
+                                                 "Fingerprinting with\nsimulated training data", 
+                                                 "Angulation with\nintersect", 
+                                                 "Angulation with\ndistance")))
 
 # Convert interval to categorical
-m1_data$Interval_seconds <- factor(m1_data$Interval_seconds)
+combined_df$Interval_seconds <- factor(combined_df$Interval_seconds)
 
-no_interac <- glmmTMB(error_m ~ tower_count + Interval_seconds +
-                        mean_distance_from_tower_km + mean_rss +
-                         (1 | Point_ID),
-                       data = m1_data, family = Gamma(link = "log"))
-
-summary(no_interac)
-
-interac <- glmmTMB(error_m ~ tower_count + Interval_seconds +
-                     mean_distance_from_tower_km + mean_rss +
-                     tower_count:Interval_seconds + 
-                     tower_count:mean_distance_from_tower_km + 
-                     tower_count:mean_rss + 
-                     Interval_seconds:mean_distance_from_tower_km + 
-                     Interval_seconds:mean_rss + 
-                     mean_distance_from_tower_km:mean_rss +
-                     (1 | Point_ID),
-                   data = m1_data, family = Gamma(link = "log"))
-
-summary(interac)
-
+# Move the default model to the intersect
 combined_df$method_name <- relevel(combined_df$method_name, ref = 'Fingerprinting with\ncombined training data')
 
-interac_sel <- glmmTMB(error_m ~ method_name + tower_count + Interval_seconds +
-                     mean_distance_from_tower_km + mean_rss +
-                     method_name:mean_distance_from_tower_km + 
-                     mean_distance_from_tower_km:mean_rss +
-                     (1 | Point_ID),
-                   data = combined_df, family = Gamma(link = "log"))
+### glmm multiple model inference
+yl = "Positional error (m)"
 
-summary(interac_sel)
+null_model <- glmmTMB(error_m ~ 1 +
+                        (1 | Point_ID),
+                      data = combined_df, family = Gamma(link = "log"))
 
-model.sel(no_interac, interac, interac_sel, rank = "AIC")
+method_only <- glmmTMB(error_m ~ method_name +
+                         (1 | Point_ID),
+                       data = combined_df, family = Gamma(link = "log"))
 
+properties_only <- glmmTMB(error_m ~ tower_count + Interval_seconds +
+                             mean_distance_from_tower_km + mean_rss +
+                         (1 | Point_ID),
+                       data = combined_df, family = Gamma(link = "log"))
 
+all_no_interac <- glmmTMB(error_m ~ method_name + tower_count + Interval_seconds +
+                            mean_distance_from_tower_km + mean_rss +
+                            (1 | Point_ID),
+                          data = combined_df, family = Gamma(link = "log"))
 
-best_model <- interac_sel
+all_method_interac <- glmmTMB(error_m ~ method_name * (tower_count + Interval_seconds +
+                            mean_distance_from_tower_km + mean_rss) +
+                            (1 | Point_ID),
+                          data = combined_df, family = Gamma(link = "log"))
+
+model.sel(null_model, method_only, properties_only, all_no_interac, all_method_interac, rank = "AIC")
+
+best_model <- all_method_interac
+
+summary(best_model)
 
 simulationOutput <- simulateResiduals(fittedModel = best_model, plot = F)
 plot(simulationOutput)
