@@ -75,20 +75,24 @@ ggplot(combined_df, aes(x = error_m)) +
   labs(title = "Histogram of error_m", x = "error_m", y = "Count") +
   theme_minimal()
 
-# Relabel methods
+# Relabel methods and set the order
 combined_df$method_name <- factor(combined_df$model,
-                                  levels = rev(c("m1", "m2", "m3", "m4", "m5")),
-                                  labels = rev(c("Fingerprinting with\ncombined training data", 
-                                                 "Fingerprinting with\nradio tracked training data",
-                                                 "Fingerprinting with\nsimulated training data", 
-                                                 "Angulation with\nintersect", 
-                                                 "Angulation with\ndistance")))
+                                  levels = c("m1", "m2", "m3", "m4", "m5"),
+                                  labels = c("Fingerprinting with\ncombined training data", 
+                                             "Fingerprinting with\nradio tracked training data",
+                                             "Fingerprinting with\nsimulated training data", 
+                                             "Angulation with\nintersect", 
+                                             "Angulation with\ndistance"))
+
+combined_df <- subset(combined_df, !(model %in% c("m1", "m3")))
 
 # Convert interval to categorical
 combined_df$Interval_seconds <- factor(combined_df$Interval_seconds)
 
-# Move the default model to the intersect
-combined_df$method_name <- relevel(combined_df$method_name, ref = 'Fingerprinting with\ncombined training data')
+# Standardizing and centering predictor variables
+combined_df$tower_count_standardised <- scale(combined_df$tower_count)
+combined_df$mean_distance_from_tower_km_standardised <- scale(combined_df$mean_distance_from_tower_km)
+combined_df$mean_rss_standardised <- scale(combined_df$mean_rss)
 
 ### glmm multiple model inference
 yl = "Positional error (m)"
@@ -101,18 +105,18 @@ method_only <- glmmTMB(error_m ~ method_name +
                          (1 | Point_ID),
                        data = combined_df, family = Gamma(link = "log"))
 
-properties_only <- glmmTMB(error_m ~ tower_count + Interval_seconds +
-                             mean_distance_from_tower_km + mean_rss +
+properties_only <- glmmTMB(error_m ~ tower_count_standardised + Interval_seconds +
+                             mean_distance_from_tower_km_standardised + mean_rss_standardised +
                          (1 | Point_ID),
                        data = combined_df, family = Gamma(link = "log"))
 
-all_no_interac <- glmmTMB(error_m ~ method_name + tower_count + Interval_seconds +
-                            mean_distance_from_tower_km + mean_rss +
+all_no_interac <- glmmTMB(error_m ~ method_name + tower_count_standardised + Interval_seconds +
+                            mean_distance_from_tower_km_standardised + mean_rss_standardised +
                             (1 | Point_ID),
                           data = combined_df, family = Gamma(link = "log"))
 
-all_method_interac <- glmmTMB(error_m ~ method_name * (tower_count + Interval_seconds +
-                            mean_distance_from_tower_km + mean_rss) +
+all_method_interac <- glmmTMB(error_m ~ method_name * (tower_count_standardised + Interval_seconds +
+                            mean_distance_from_tower_km_standardised + mean_rss_standardised) +
                             (1 | Point_ID),
                           data = combined_df, family = Gamma(link = "log"))
 
@@ -132,37 +136,65 @@ print(tidy_model)
 #write.xlsx(tidy_model, file = "paper_results/Figures/Model_1_glmm_covariates_20240128.xlsx")
 
 # Number of observations
-nrow(m1_data)
+nrow(combined_df)
 
 # R-squared for GLMM
 performance::r2(best_model)
 
 ### Plot output
+theme_set(theme_bw())
 
-# Plot1
-plot_test <- plot_model(best_model, type = "eff", terms = c("method_name"),show.legend = FALSE,
+# Plot effects
+odds_plot <- plot_model(best_model, sort.est = TRUE, vline.color = "black", show.p = TRUE, show.values = TRUE, 
+           value.offset = 0.4, value.size = 4, title="")
+
+odds_plot <- odds_plot + 
+  scale_x_discrete(expand = expansion(add = c(0.5, 0.8)),
+                   labels=list(
+                     'method_nameAngulation with\nintersect' = 'Angulation with intersect',
+                     'method_nameAngulation with\ndistance' = 'Angulation with distance',
+                     'tower_count_standardised' = 'Tower count',
+                     'Interval_seconds13' = 'Interval (13 seconds)',
+                     'mean_distance_from_tower_km_standardised' = 'Mean distance from tower',
+                     'mean_rss_standardised' = 'Mean relative signal strength',
+                     'method_nameAngulation with\nintersect:tower_count_standardised' = 'Angulation with intersect x\ntower count',
+                     'method_nameAngulation with\ndistance:tower_count_standardised' = 'Angulation with distance x\ntower count',
+                     'method_nameAngulation with\nintersect:Interval_seconds13' = 'Angulation with intersect x\ntag interval',
+                     'method_nameAngulation with\ndistance:Interval_seconds13' = 'Angulation with distance x\ntag interval',
+                     'method_nameAngulation with\nintersect:mean_distance_from_tower_km_standardised' = 'Angulation with intersect x\nmean distance from tower',
+                     'method_nameAngulation with\ndistance:mean_distance_from_tower_km_standardised' = 'Angulation with distance x\nmean distance from tower',
+                     'method_nameAngulation with\nintersect:mean_rss_standardised' = 'Angulation with intersect x\nmean relative signal strength',
+                     'method_nameAngulation with\ndistance:mean_rss_standardised' = 'Angulation with distance x\nmean relative signal strength'
+                   )) +
+  scale_y_continuous(expand = expansion(mult = c(0.1, 0.1)))
+
+plot(odds_plot)
+
+odds_plot$data # to get variable names
+
+# Plot methods
+plot_method <- plot_model(best_model, type = "eff", terms = c("method_name"),show.legend = FALSE,
                     dot.size = 1.5, line.size = 0.8, title = "",
-                    axis.title = c("Mean distance from tower", yl),
+                    axis.title = c("", yl),
                     colors = 'Set1', show.data = FALSE, dot.alpha = 0.3) +
-  theme_bw() +
-  labs(tag = "(A)")
-plot(plot_test)
+  coord_flip()
+plot(plot_method)
+
+#ggsave("paper_results/Figures/model_comparison_20240221.png", plot = model_comparison_plt, width = 140, height = 80, units = "mm", dpi = 600)
 
 # Plot1
-plot1 <- plot_model(best_model, type = "eff", terms = c("mean_distance_from_tower"),show.legend = FALSE,
+plot1 <- plot_model(best_model, type = "eff", terms = c("mean_distance_from_tower_km_standardised"),show.legend = FALSE,
                     dot.size = 1.5, line.size = 0.8, title = "",
-                    axis.title = c("Mean distance from tower", yl),
+                    axis.title = c("Mean distance from tower", yl), jitter = 0.01,
                     colors = 'Set1', show.data = TRUE, dot.alpha = 0.3) +
-  theme_bw() +
   labs(tag = "(A)")
 plot(plot1)
 
 # Plot2
-plot2 <- plot_model(best_model, type = "eff", terms = c("mean_rss"),show.legend = FALSE,
+plot2 <- plot_model(best_model, type = "eff", terms = c("mean_rss_standardised"),show.legend = FALSE,
                     dot.size = 1.5, line.size = 0.8, title = "",
-                    axis.title = c("Mean signal strength (RSSI)", yl),
+                    axis.title = c("Mean signal strength (RSSI)", yl), jitter = 0.01,
                     colors = 'Set1', show.data = TRUE, dot.alpha = 0.3) +
-  theme_bw() +
   labs(tag = "(B)")
 plot(plot2)
 
@@ -171,17 +203,15 @@ plot3 <- plot_model(best_model, type = "eff", terms = "Interval_seconds",show.le
                     dot.size = 1.5, line.size = 0.8, title = "",
                     axis.title = c("Tag interval (seconds)", yl),
                     colors = 'Set1') +
-  theme_bw() +
   labs(tag = "(C)")+ 
   coord_cartesian(xlim=c(0,16))
 plot(plot3)
 
 # Plot4
-plot4 <- plot_model(best_model, type = "eff", terms = "tower_count",
+plot4 <- plot_model(best_model, type = "eff", terms = "tower_count_standardised",
                     dot.size = 1.5, line.size = 0.8, title = "",
-                    axis.title = c("Tower count", yl),
+                    axis.title = c("Tower count", yl), jitter = 0.01,
                     colors = 'Set1', ci.lvl = 0.95, show.data = TRUE, dot.alpha = 0.3) +
-  theme_bw() +
   labs(tag = "(D)")
   
 plot(plot4)
@@ -190,10 +220,15 @@ plot(plot4)
 plot_grid <- grid.arrange(plot1, plot2, plot3, plot4, ncol = 2, nrow = 2)
 
 # Save the plot grid
-ggsave("paper_results/Figures/positional_error_covariates_20240128.png", plot = plot_grid, width = 160, height = 160, units = "mm", dpi = 600)
+#ggsave("paper_results/Figures/positional_error_covariates_20240128.png", plot = plot_grid, width = 160, height = 160, units = "mm", dpi = 600)
 
-
-
+# Interaction plots
+plot1 <- plot_model(best_model, type = "eff", terms = c("mean_distance_from_tower_km"),show.legend = FALSE,
+                    dot.size = 1.5, line.size = 0.8, title = "",
+                    axis.title = c("Mean distance from tower", yl), jitter = 0.1,
+                    colors = 'Set1', show.data = TRUE, dot.alpha = 0.3) +
+  labs(tag = "(A)")
+plot(plot1)
 
 
 
