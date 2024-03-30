@@ -81,6 +81,9 @@ combined_df$method_name <- factor(combined_df$model,
 # Convert interval to categorical
 combined_df$Interval_seconds <- factor(combined_df$Interval_seconds)
 
+# Export the combined dataframe to an Excel file
+#openxlsx::write.xlsx(combined_df, "combined_data.xlsx", overwrite = TRUE)
+
 # Standardizing and centering predictor variables
 #combined_df$tower_count_standardised <- scale(combined_df$tower_count)
 #combined_df$mean_distance_from_tower_km_standardised <- scale(combined_df$mean_distance_from_tower_km)
