@@ -5,21 +5,21 @@ rm(list = ls())
 pacman::p_load(readxl,openxlsx,dplyr,ggplot2, viridis, boot, glmmTMB, DHARMa, sjPlot, gridExtra, broom.mixed, stringr, tidyr,MuMIn,cowplot)
 
 LF <- read_excel("ml4rt_output/trained_models/location_fingerprinting/error_estimates.xlsx")
-AwI <- read_excel("ml4rt_output/trained_models/angulation_w_intersect/error_estimates_mech_w_biangulation.xlsx")
-AwD <- read_excel("ml4rt_output/trained_models/angulation_w_distance/error_estimates_mech_w_linear_regression.xlsx")
+Biangulation <- read_excel("ml4rt_output/trained_models/angulation_w_intersect/error_estimates_mech_w_biangulation.xlsx")
+LR <- read_excel("ml4rt_output/trained_models/angulation_w_distance/error_estimates_mech_w_linear_regression.xlsx")
 
 # Adding an identifier column to each dataframe
 LF$model <- "LF"
-AwI$model <- "AwI"
-AwD$model <- "AwD"
+Biangulation$model <- "Biangulation"
+LR$model <- "LR"
 
 # Remove rows where 'error_m' is na or greater than 10000 for the biangulation method
-AwI <- AwI %>%
+Biangulation <- Biangulation %>%
   filter(!is.na(error_m)) %>%
   filter(error_m <= 10000)
 
 # Combining the dataframes
-combined_df <- bind_rows(LF, AwI, AwD)
+combined_df <- bind_rows(LF, Biangulation, LR)
 
 summary_df <- combined_df %>%
   group_by(model) %>%
@@ -51,9 +51,9 @@ reference_data <- combined_df %>%
 combined_df <- combined_df %>%
   left_join(reference_data, by = c("DateTime", "TagID")) %>%
   mutate(
-    tower_count = if_else(model %in% c("AwI", "AwD") & is.na(Tower_count), ref_tower_count, Tower_count),
-    Signal_count = if_else(model %in% c("AwI", "AwD") & is.na(Signal_count), ref_Signal_count, Signal_count),
-    mean_distance_from_tower = if_else(model %in% c("AwI", "AwD") & is.na(mean_distance_from_tower), ref_mean_distance_from_tower, mean_distance_from_tower)
+    tower_count = if_else(model %in% c("Biangulation", "LR") & is.na(Tower_count), ref_tower_count, Tower_count),
+    Signal_count = if_else(model %in% c("Biangulation", "LR") & is.na(Signal_count), ref_Signal_count, Signal_count),
+    mean_distance_from_tower = if_else(model %in% c("Biangulation", "LR") & is.na(mean_distance_from_tower), ref_mean_distance_from_tower, mean_distance_from_tower)
   ) %>%
   select(-starts_with("ref_")) # Remove reference columns
 
@@ -73,10 +73,10 @@ ggplot(combined_df, aes(x = error_m)) +
 
 # Relabel methods and set the order
 combined_df$method_name <- factor(combined_df$model,
-                                  levels = c("LF", "AwI", "AwD"),
+                                  levels = c("LF", "Biangulation", "LR"),
                                   labels = c("Location\nfingerprinting",
-                                             "Angulation with\nintersect", 
-                                             "Angulation with\ndistance"))
+                                             "Biangulation", 
+                                             "Linear\nregression"))
 
 # Convert interval to categorical
 combined_df$Interval_seconds <- factor(combined_df$Interval_seconds)
@@ -90,8 +90,6 @@ combined_df$Interval_seconds <- factor(combined_df$Interval_seconds)
 #combined_df$mean_rss_standardised <- scale(combined_df$mean_rss)
 
 ### glmm multiple model inference
-yl = "Positional error (m)"
-
 null_model <- glmmTMB(error_m ~ 1 +
                         (1 | Point_ID),
                       data = combined_df, family = Gamma(link = "log"))
@@ -135,6 +133,7 @@ performance::r2(best_model)
 
 ### Plot output
 theme_set(theme_bw())
+yl = "Positional error (m)"
 
 # Plot effects
 odds_plot <- plot_model(best_model, sort.est = TRUE, type = 'std', vline.color = "black", show.p = TRUE, show.values = TRUE, 
@@ -176,12 +175,12 @@ plot_method <- plot_model(best_model, type = "eff", terms = c("method_name"),sho
 
 plot(plot_method)
 
-#ggsave("paper_results/Figures/model_comparison_20240324.png", plot = plot_method, width = 110, height = 100, units = "mm", dpi = 600)
+#ggsave("paper_results/Figures/model_comparison_20240401.png", plot = plot_method, width = 110, height = 100, units = "mm", dpi = 600)
 
 # Plot1
 plot1 <- plot_model(best_model, type = "eff", terms = c("mean_distance_from_tower_km"),show.legend = FALSE,
                     dot.size = 1.5, line.size = 0.8, title = "",
-                    axis.title = c("Mean distance from receiver (km)", yl), jitter = 0.01,
+                    axis.title = c("Mean distance to receiver (km)", yl), jitter = 0.01,
                     colors = 'Set1', show.data = TRUE, dot.alpha = 0.3) +
   labs(tag = "(A)")
 plot(plot1)
@@ -197,7 +196,7 @@ plot(plot2)
 # Plot3
 plot3 <- plot_model(best_model, type = "eff", terms = "Interval_seconds",show.legend = FALSE,
                     dot.size = 1.5, line.size = 0.8, title = "",
-                    axis.title = c("Tag interval (seconds)", yl),
+                    axis.title = c("Pulse interval (seconds)", yl),
                     colors = 'Set1') +
   labs(tag = "(C)")+ 
   coord_cartesian(xlim=c(0,16), ylim=c(0,500))
@@ -216,13 +215,13 @@ plot(plot4)
 plot_grid <- grid.arrange(plot1, plot2, plot3, plot4, ncol = 2, nrow = 2)
 
 # Save the plot grid
-#ggsave("paper_results/Figures/positional_error_covariates_20240306.png", plot = plot_grid, width = 160, height = 160, units = "mm", dpi = 600)
+#ggsave("paper_results/Figures/positional_error_covariates_20240331.png", plot = plot_grid, width = 160, height = 160, units = "mm", dpi = 600)
 
 # Interaction plots
 intplot1 <- plot_model(best_model, type = "eff", 
                     terms = c("Interval_seconds", "method_name"),
                     show.legend = FALSE, dot.size = 1.5, line.size = 0.8, title = "",
-                    axis.title = c("Tag interval", yl), jitter = 0.04,
+                    axis.title = c("Pulse interval (seconds)", yl), jitter = 0.04,
                     colors = 'Set1', show.data = FALSE, dot.alpha = 0.1, dodge = 2) +
   labs(tag = "(A)", color = "Tag interval") +
   theme(legend.position = "bottom",
@@ -233,7 +232,7 @@ plot(intplot1)
 intplot2 <- plot_model(best_model, type = "eff", 
                        terms = c("mean_distance_from_tower_km", "method_name"),
                        show.legend = TRUE, dot.size = 1.5, line.size = 0.8, title = "",
-                       axis.title = c("Mean distance from receiver (km)", yl), jitter = 0.04,
+                       axis.title = c("Mean distance to receiver (km)", yl), jitter = 0.04,
                        colors = 'Set1', show.data = FALSE, dot.alpha = 0.1, dodge = .4) +
   labs(tag = "(B)", color = "Method") +
   theme(legend.position = "top",
@@ -244,9 +243,9 @@ plot(intplot2)
 intplot3 <- plot_model(best_model, type = "eff", 
                        terms = c("mean_rss", "method_name"),
                        show.legend = FALSE, dot.size = 1.5, line.size = 0.8, title = "",
-                       axis.title = c("Mean received signal strength", yl), jitter = 0.04,
+                       axis.title = c("Mean signal strength (RSS)", yl), jitter = 0.04,
                        colors = 'Set1', show.data = FALSE, dot.alpha = 0.4, dodge = .4) +
-  labs(tag = "(C)", color = "Mean recieved signal strength") +
+  labs(tag = "(C)", color = "Mean signal strength (RSS)") +
   theme(legend.position = "top",
         plot.tag.position = c(0.03, 0.95))
 plot(intplot3)
@@ -260,7 +259,7 @@ intplot2 <- intplot2 + theme(legend.position="none")
 intplot3 <- intplot3 + theme(legend.position="none")
 
 # Combine your plots in a single column
-combined_plots <- intplot1 / intplot2 / intplot3 
+combined_plots <- plot_grid(intplot1, intplot2, intplot3, ncol = 1)
 
 # Use cowplot to arrange the legend on top of the combined plots
 # Adjust `rel_heights` to control the space allocated to the legend vs. the plots
@@ -269,7 +268,7 @@ final_plot <- plot_grid(legend, combined_plots, ncol = 1, rel_heights = c(0.12, 
 # Display the final plot
 print(final_plot)
 
-#ggsave("paper_results/Figures/interactions_20240312.png", plot = final_plot, width = 85, height = 250, units = "mm", dpi = 1200)
+#ggsave("paper_results/Figures/interactions_20240401.png", plot = final_plot, width = 85, height = 250, units = "mm", dpi = 1200)
 
 
 # Calculate statistics for the paper
@@ -313,10 +312,10 @@ figure_number <- 1
               error_stats$se_mean[error_stats$model == "LF"],
               error_stats$median_error[error_stats$model == "LF"],
               error_stats$se_median[error_stats$model == "LF"],
-              error_stats$mean_error[error_stats$model == "AwD"], 
-              error_stats$se_mean[error_stats$model == "AwD"],
-              error_stats$median_error[error_stats$model == "AwD"],
-              error_stats$se_median[error_stats$model == "AwD"],
+              error_stats$mean_error[error_stats$model == "LR"], 
+              error_stats$se_mean[error_stats$model == "LR"],
+              error_stats$median_error[error_stats$model == "LR"],
+              error_stats$se_median[error_stats$model == "LR"],
               figure_number))
 
 # Similar calculations for 'Angulation with Bearing' if applicable
