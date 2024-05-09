@@ -18,9 +18,7 @@ This is to be built to allow for parameter optimisation. Parameters include:
 - spline method (or other location averaging functions)
 
 To do:
-- Need to add cross validation
-- Capture and save models during the model training
-- Consider engineering a feature that is something like the number of detections within n time (e.g. detection/5min)
+- Make Simul_data_query a point and click.
 
 Break up optimisation into:
 - pre-processing (frequency, average signal strength, max signal strength, or include detection/time)

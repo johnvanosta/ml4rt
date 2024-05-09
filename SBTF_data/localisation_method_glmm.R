@@ -65,12 +65,6 @@ combined_df <- combined_df %>%
   left_join(variables_to_merge, by = c("DateTime", "TagID")) %>%
   mutate(mean_distance_from_tower_km = mean_distance_from_tower / 1000)
 
-# show distribution of error_m
-ggplot(combined_df, aes(x = error_m)) +
-  geom_histogram(binwidth = 10, fill = "blue", color = "black") +
-  labs(title = "Histogram of error_m", x = "error_m", y = "Count") +
-  theme_minimal()
-
 # Relabel methods and set the order
 combined_df$method_name <- factor(combined_df$model,
                                   levels = c("LF", "Biangulation", "LR"),
@@ -284,48 +278,3 @@ error_stats <- combined_df %>%
 
 # Calculate standard error for the mean
 error_stats$se_mean = error_stats$sd_error / sqrt(error_stats$count)
-
-# Bootstrap to estimate standard error of the median
-set.seed(123)  # for reproducibility
-bootstrap_se_median <- function(data, n_bootstrap = 1000) {
-  sample_median <- replicate(n_bootstrap, {
-    sample_data <- sample(data, replace = TRUE)
-    median(sample_data)
-  })
-  sd(sample_median)
-}
-
-# Apply bootstrap function to each group to calculate SE of the median
-error_stats$se_median <- mapply(function(data) {
-  bootstrap_se_median(data)
-}, split(combined_df$error_m, combined_df$model))
-
-# Print error statistics with standard errors
-print(error_stats)
-
-# Assuming figure number based on your document's figure sequence
-figure_number <- 1
-  
-  # Output the values to fill in the sentences
-  cat(sprintf("The location fingerprinting and angulation with distance methods achieved a similar performance, with average positional errors of %.2f (SE = %.2f) and median positional errors of %.2f (SE = %.2f), respectively; and %.2f (SE = %.2f) and %.2f (SE = %.2f) for angulation with distance, respectively (Figure %d).\n", 
-              error_stats$mean_error[error_stats$model == "LF"], 
-              error_stats$se_mean[error_stats$model == "LF"],
-              error_stats$median_error[error_stats$model == "LF"],
-              error_stats$se_median[error_stats$model == "LF"],
-              error_stats$mean_error[error_stats$model == "LR"], 
-              error_stats$se_mean[error_stats$model == "LR"],
-              error_stats$median_error[error_stats$model == "LR"],
-              error_stats$se_median[error_stats$model == "LR"],
-              figure_number))
-
-# Similar calculations for 'Angulation with Bearing' if applicable
-if ("AwB" %in% error_stats$model) {
-  bearing_error_stats <- error_stats[error_stats$model == "AwB", ]
-  cat(sprintf("In contrast, angulation with bearing had an average positional error of %.2f (SE = %.2f) and a median positional error of %.2f (SE = %.2f).\n", 
-              bearing_error_stats$mean_error, 
-              bearing_error_stats$se_mean,
-              bearing_error_stats$median_error,
-              bearing_error_stats$se_median))
-}
-
-
