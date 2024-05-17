@@ -1,44 +1,50 @@
-# ml4rt
+# ml4rt: Machine Learning for Radio Telemetry
 
-## Machine Learning for Radio Telemetry
+This repository contains the code base and supporting data to reproduce the findings of the paper: 'Comparison of localisation methods for the automated radio telemetry of wildlife' (herein referred to as 'the Paper')
 
-Tools to estimate wildlife locations from automated radio telemetry tower data
+The repository also contains instructions and tools to apply the method to other studies.
 
-Includes:
-- Text to csv converter for Lotek legacy format text files
-- preprocessing data
-- training ML models
-- running models over raw data
-- visualising results
+## Code base
+The code base includes:
+- train_model.ipynb: Uses the H20 AutoML package to fit models to the training data and evaluate accuracy using a test dataset.
+- predict.ipynb: Applies the trained model to unlabelled data (inference)
+- mechanistic_models.ipynb: Runs two alternative localisation approaches, which are linear regression and biangulation, as described in the Paper.
+- requirements.txt: Python package requirements to run the code base
 
-This is to be built to allow for parameter optimisation. Parameters include:
-- time period over which to average signals
-- model selection and model parameters
-- cross validation number
-- spline method (or other location averaging functions)
+## Supplementary files and reproduction of the paper's results
+The folder 'SBTF_data' contains the data, figures and R code to reproduce the results of the Paper. Specifically, these include:
+- Input data, including, training and testing data and information on the radio tower locations.
+- Output from the location fingerprinting, linear regression and biangulation methods compared in the Paper.
+- Data to support the analysis of the impact of sample size on positional error.
+- Figures from the paper
+- R code to repeat all statistical models and figure production.
 
-To do:
-- Make Simul_data_query a point and click.
-
-Break up optimisation into:
-- pre-processing (frequency, average signal strength, max signal strength, or include detection/time)
-- model selection and parameter tuning
-- Location averaging and smoothing functions (mean, lowess?, other?)
-
-Data input requirements:
-- GPS coordinates in WG84 datum
-- Raw tower data, eventually in a csv format (some pre-processing scripts to support Lotek provided)
-- Labelled data in the form of GPS locations of tags with start and end times
-
-Getting started:
-- Need to install Java, which is required by H20 (used as the engine to train the machine learning models):
+## Using the model on your own data
+### Getting started
+1. Install Java, which is required by H20 (used as the engine to train the machine learning models):
     - Version 17 recommended: https://www.oracle.com/java/technologies/javase/jdk17-archive-downloads.html
     - Following recommendations from H20: https://docs.h2o.ai/h2o/latest-stable/h2o-docs/welcome.html#java-requirements
-- Make sure you can work with Jupyter notebooks in Pythons. The codebase has been tested using VS Code (Microsoft)
+2. Clone this repository (https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository)
+3. Open repository in your code editor. We have tested this repository using Microsoft's Visual Studio Code (https://code.visualstudio.com/). If using Visual Studio Code, ensure the 'Python' and 'Jupyter' extensions are installed (https://code.visualstudio.com/docs/datascience/jupyter-notebooks).
+4. Setup the python environment by installing the package requirements identified within the requirements.txt file contained within the repository. The steps to setup a python environment in Visual Studio Code are described here: https://code.visualstudio.com/docs/python/environments, or more generally for python described here: https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/. This will download the necessary python packages to support the below code.
 
+### Process to localise transmitter positions
+#### Train a model
+1. Ensure receiver data are formatted consistent with the example 'test_data.xlsx' and 'train_data.xlsx' saved at path: SBTF_data\input_data\train_test_data
+2. Ensure data on the radio tower locations and groups are formatted consistent with the example data: SBTF_data\input_data\radio_tower_locations\RTEastNorth_1group.xlsx
+We recommend that each 'tower_group' has at least 100 training data locations and that towers are consistent in design among the groups.
+3. Run train_model.ipynb, which will prompt the following user inputs:
+- Training data location (e.g. SBTF_data\input_data\train_test_data\train_data.xlsx).
+- Testing data location (e.g. SBTF_data\input_data\train_test_data\test_data.xlsx).
+- radio tower data location (e.g. SBTF_data\input_data\radio_tower_locations\RTEastNorth_1group.xlsx).
+- Model save path: location you wish to save the trained models. Two models will be saved, one for each of the x and y axes.
+Step 3 may take ~20 minutes depending on CPU speed.
+- Time frequency (in mintues) you wish to group data. This will be study specific and depends on factors such as tag pulse interval and receiver scan interval.
 
-Process:
-1. Pre-process data to required formats. Some assistance is provided by lotek_txt2csv.ipynb, then manual QA, if needed
-2. simul_data_query.ipynb extracts the radio tower data that match the tag ID and time periods of the labelled GPS data. This script also splits the labelled data into training and testing sets (using a 80:20 split).
-3. train_model_h2o.ipynb uses the H2O AutoML pipeline (https://docs.h2o.ai/h2o/latest-stable/h2o-docs/automl.html) to optimise model selection and hyperparameter optimisation. The script then makes predictions on the test data to evaluate the final model's performance.
-4. 
+#### Inference
+Run predict.ipynb, which will prompt the following user inputs:
+- Unlabelled reciever data. Make sure it is in the same format as the training/testing data (e.g. SBTF_data\input_data\train_test_data\test_data.xlsx), except it should exclude the POINT_X (longitude) and POINT_Y (latitude) columns.
+- radio tower data location (e.g. SBTF_data\input_data\radio_tower_locations\RTEastNorth_1group.xlsx).
+- Model save path, same path as Step 3 of the model training step.
+- Predictions save path, which is the location of export for the estimated locations of the reciever data.
+- Time frequency (in mintues) you wish to group data. As per the model training step.

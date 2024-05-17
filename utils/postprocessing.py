@@ -45,6 +45,18 @@ def location_averaging(prediction_data):
 
     return prediction_data
 
+def location_averaging_inference(prediction_data):
+    # Group by columns and calculate the desired aggregations
+    prediction_data = (prediction_data.groupby(['DateTime', 'TagID'], as_index=False)
+        .agg({'easting_pred':'mean',
+            'northing_pred':'mean',
+            'zone_number':'first',
+            'zone_letter':'first'
+            })
+    )
+
+    return prediction_data
+
 def calculate_error(test_location_estimates):
     # Calculate the error of location predictions
     test_location_estimates['easting_error'] = test_location_estimates['easting_pred'] - test_location_estimates['easting']

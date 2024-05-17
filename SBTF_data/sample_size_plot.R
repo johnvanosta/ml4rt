@@ -2,60 +2,9 @@ rm(list = ls())
 
 pacman::p_load(readxl,ggplot2,RColorBrewer,dplyr,readr,writexl)
 
-####### Structure the location fingerprinting output
-# Set folder containing the CSV files
-folder_path_lf <- "ml4rt_output/predictions/sample_size_analysis_fingerprinting"
-
-# List all CSV files in the folder
-file_list_lf <- list.files(path = folder_path_lf, pattern = "\\.csv$", full.names = TRUE)
-
-# Read and store all data frames in a list
-dataframes <- lapply(file_list_lf, read_csv)
-
-# Combine all dataframes into a single dataframe
-sample_size_data_lf <- bind_rows(dataframes)
-
-# Export the dataframe to an Excel file
-#write_xlsx(sample_size_data_lf, "ml4rt_output/predictions/sample_size_analysis_fingerprinting.xlsx")
-
-
-####### Structure the Linear regression output
-# Set folder containing the xlsx files
-folder_path_lr <- "ml4rt_output/predictions/sample_size_analysis_angulation_w_distance"
-
-# List all xlsx files in the folder
-file_list_lr <- list.files(path = folder_path_lr, pattern = "\\.xlsx$", full.names = TRUE)
-
-# Initialize an empty dataframe to store results
-results_df <- data.frame(n = integer(), r = integer(), mean_error = numeric(), std_error = numeric())
-
-# Iterate through the files to create a new dataframe
-for (file in file_list_lr) {
-  # Get the filename and split the first two values denominated by "_".
-  file_name_parts <- unlist(strsplit(basename(file), "_"))
-  n_value <- as.integer(file_name_parts[1])
-  r_value <- as.integer(file_name_parts[2])
-
-    # Open the xlsx file and read the 'error_m' column
-  error_m_data <- read_excel(file)
-  
-  # Calculate the average and standard error of the 'error_m' column
-  mean_error <- mean(error_m_data$error_m)
-  std_error <- sd(error_m_data$error_m) / sqrt(length(error_m_data$error_m))
-  
-  # Combine the data into a new row and add to the results dataframe
-  results_df <- rbind(results_df, data.frame(r = r_value, n = n_value, mean_error = mean_error, std_error = std_error))
-}
-
-# View the final dataframe
-print(results_df)
-
-# Export the dataframe to an Excel file
-#write_xlsx(results_df, "ml4rt_output/predictions/sample_size_analysis_ang_w_dist.xlsx")
-
 # Import data
-lf_data <- read_excel("ml4rt_output/predictions/sample_size_analysis_fingerprinting/sample_size_analysis_fingerprinting.xlsx")
-lr_data <- read_excel("ml4rt_output/predictions/sample_size_analysis_angulation_w_distance/sample_size_analysis_ang_w_dist.xlsx")
+lf_data <- read_excel("ml4rt_output/sample_size_analysis_location_fingerprinting.xlsx")
+lr_data <- read_excel("ml4rt_output/sample_size_analysis_linear_regression.xlsx")
 
 # Add a 'method' column to each data frame
 lf_data <- lf_data %>% mutate(method = "Location fingerprinting")

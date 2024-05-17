@@ -13,7 +13,7 @@ LF$model <- "LF"
 Biangulation$model <- "Biangulation"
 LR$model <- "LR"
 
-# Remove rows where 'error_m' is na or greater than 10000 for the biangulation method
+# Remove rows where 'error_m' is na or greater than 10000 (i.e. outside of the study area) for the biangulation method
 Biangulation <- Biangulation %>%
   filter(!is.na(error_m)) %>%
   filter(error_m <= 10000)
@@ -114,8 +114,13 @@ best_model <- all_method_interac
 
 summary(best_model)
 
+# Plot residuals
 simulationOutput <- simulateResiduals(fittedModel = best_model, plot = F)
+
+# Create the residual plot and save it using the base R method
+#png("paper_results/Figures/model_residuals_20240517.png", width = 200, height = 140, units = "mm", res = 1200)
 plot(simulationOutput)
+#dev.off()
 
 tab_model(best_model, show.std = TRUE, show.est = FALSE)
 
@@ -201,7 +206,8 @@ plot4 <- plot_model(best_model, type = "eff", terms = "tower_count",
                     dot.size = 1.5, line.size = 0.8, title = "",
                     axis.title = c("Tower count", yl), jitter = 0.08,
                     colors = 'Set1', ci.lvl = 0.95, show.data = TRUE, dot.alpha = 0.3) +
-  labs(tag = "(D)")
+  labs(tag = "(D)") +
+  scale_x_continuous(breaks = seq(1, 9, by = 2))
   
 plot(plot4)
 
@@ -209,7 +215,7 @@ plot(plot4)
 plot_grid <- grid.arrange(plot1, plot2, plot3, plot4, ncol = 2, nrow = 2)
 
 # Save the plot grid
-#ggsave("paper_results/Figures/positional_error_covariates_20240331.png", plot = plot_grid, width = 160, height = 160, units = "mm", dpi = 600)
+#ggsave("paper_results/Figures/positional_error_covariates_20240517.png", plot = plot_grid, width = 160, height = 160, units = "mm", dpi = 600)
 
 # Interaction plots
 intplot1 <- plot_model(best_model, type = "eff", 
