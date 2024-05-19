@@ -15,8 +15,7 @@ LR$model <- "LR"
 
 # Remove rows where 'error_m' is na or greater than 10000 (i.e. outside of the study area) for the biangulation method
 Biangulation <- Biangulation %>%
-  filter(!is.na(error_m)) %>%
-  filter(error_m <= 10000)
+  filter(!is.na(error_m))
 
 # Combining the dataframes
 combined_df <- bind_rows(LF, Biangulation, LR)
