@@ -36,7 +36,7 @@ We recommend that each 'tower_group' has at least 100 training data locations an
 3. Run train_model.ipynb, which will prompt the following user inputs:
 - Training data location (e.g. SBTF_data\input_data\train_test_data\train_data.xlsx).
 - Testing data location (e.g. SBTF_data\input_data\train_test_data\test_data.xlsx).
-- radio tower data location (e.g. SBTF_data\input_data\radio_tower_locations\RTEastNorth_1group.xlsx).
+- Radio tower data location (e.g. SBTF_data\input_data\radio_tower_locations\RTEastNorth_1group.xlsx).
 - Model save path: location you wish to save the trained models. Two models will be saved, one for each of the x and y axes.
 Step 3 may take ~20 minutes depending on CPU speed.
 - Time frequency (in mintues) you wish to group data. This will be study specific and depends on factors such as tag pulse interval and receiver scan interval.
@@ -44,7 +44,7 @@ Step 3 may take ~20 minutes depending on CPU speed.
 #### Inference
 Run predict.ipynb, which will prompt the following user inputs:
 - Unlabelled reciever data. Make sure it is in the same format as the training/testing data (e.g. SBTF_data\input_data\train_test_data\test_data.xlsx), except it should exclude the POINT_X (longitude) and POINT_Y (latitude) columns.
-- radio tower data location (e.g. SBTF_data\input_data\radio_tower_locations\RTEastNorth_1group.xlsx).
+- Radio tower data location (e.g. SBTF_data\input_data\radio_tower_locations\RTEastNorth_1group.xlsx).
 - Model save path, same path as Step 3 of the model training step.
 - Predictions save path, which is the location of export for the estimated locations of the reciever data.
 - Time frequency (in mintues) you wish to group data. As per the model training step.
