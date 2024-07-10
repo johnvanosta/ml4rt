@@ -117,7 +117,7 @@ summary(best_model)
 simulationOutput <- simulateResiduals(fittedModel = best_model, plot = F)
 
 # Create the residual plot and save it using the base R method
-#png("paper_results/Figures/model_residuals_20240517.png", width = 200, height = 140, units = "mm", res = 1200)
+#png("paper_results/Figures/glmmm_residuals.png", width = 200, height = 140, units = "mm", res = 300)
 plot(simulationOutput)
 #dev.off()
 
@@ -173,7 +173,7 @@ plot_method <- plot_model(best_model, type = "eff", terms = c("method_name"),sho
 
 plot(plot_method)
 
-#ggsave("paper_results/Figures/model_comparison_20240401.png", plot = plot_method, width = 110, height = 100, units = "mm", dpi = 600)
+#ggsave("paper_results/Figures/Fig5.jpeg", plot = plot_method, width = 110, height = 100, units = "mm", dpi = 300)
 
 # Plot1
 plot1 <- plot_model(best_model, type = "eff", terms = c("mean_distance_from_tower_km"),show.legend = FALSE,
@@ -214,7 +214,7 @@ plot(plot4)
 plot_grid <- grid.arrange(plot1, plot2, plot3, plot4, ncol = 2, nrow = 2)
 
 # Save the plot grid
-#ggsave("paper_results/Figures/positional_error_covariates_20240517.png", plot = plot_grid, width = 160, height = 160, units = "mm", dpi = 600)
+#ggsave("paper_results/Figures/Fig6.png", plot = plot_grid, width = 160, height = 160, units = "mm", dpi = 300)
 
 # Interaction plots
 intplot1 <- plot_model(best_model, type = "eff", 
@@ -267,7 +267,7 @@ final_plot <- plot_grid(legend, combined_plots, ncol = 1, rel_heights = c(0.12, 
 # Display the final plot
 print(final_plot)
 
-#ggsave("paper_results/Figures/interactions_20240401.png", plot = final_plot, width = 85, height = 250, units = "mm", dpi = 1200)
+#ggsave("paper_results/Figures/Fig7.jpeg", plot = final_plot, width = 85, height = 250, units = "mm", dpi = 300)
 
 
 # Calculate statistics for the paper

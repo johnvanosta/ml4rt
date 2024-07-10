@@ -55,6 +55,5 @@ plot2 <- ggplot(summarized_data, aes(x = n, y = avg_mean_error, group = method))
 
 print(plot2)
 
-#ggsave("Paper_results/Figures/positional_error_sample_size_20240401.png", plot = plot2,
-       width = 140, height = 90, units = "mm", dpi = 600)
+#ggsave("Paper_results/Figures/Fig8.jpeg", plot = plot2, width = 140, height = 90, units = "mm", dpi = 300)
 
